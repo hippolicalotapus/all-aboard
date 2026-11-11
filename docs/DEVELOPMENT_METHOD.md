@@ -1,26 +1,27 @@
-# All Aboard development method — adopted at V35
+# All Aboard development method
 
 ## Source of truth
-- `source/all-aboard-personal.html` is the current verified prototype, not a production credential vault.
-- Keep `source/previous-v33.html` as rollback. Never silently change the localStorage key or backup format.
-- One project and one current source; no parallel divergent numbered prototypes.
+- The private GitHub `development` branch holds current application work; inspect the latest remote files before any change.
+- The V35 ZIP is a historical rollback checkpoint, **not** necessarily the latest branch source.
+- Never overwrite newer branch work with older checkpoints or silently change existing localStorage keys or backup formats.
+- Keep `main` stable until reviewed release.
 
-## Work loop (each development session)
-1. Inspect current source, tests, and prior checkpoint; identify highest-risk blocker.
-2. Make a cohesive batch of changes in a working copy, not in the only saved original.
-3. Run `python3 tests/run_all.py`. Fix failures before advancing.
-4. Document test evidence, unverified areas, and next blocker in README.
-5. Package all sources/tests/docs with SHA256 checksums and validate archive contents.
-6. Make a durable checkpoint available for resumption. Do not imply chat runtime files persist forever.
+## Work loop
+1. Inspect latest GitHub source and tests and compare against previous milestone.
+2. Implement a cohesive, reversible change.
+3. Run relevant tests locally where possible; distinguish actual results from unexecuted checks.
+4. Commit tested changes on `development`; verify remote content and commit SHA.
+5. Keep release notes and backups sufficient for resuming work without redoing it.
+6. Check for concurrent updates before modifying an existing file.
 
-## Git and release strategy
-- Preserve user's rule: no remote GitHub commit/push/PR without approval; only final approved production commit.
-- Intermediate local file snapshots and portable ZIP checkpoints are allowed, not GitHub commits.
-- When repository is confirmed, compare its code against this checkpoint before any merge or push.
-- Release gates: passing automated checks, browser integration in permitted environment, real Samsung verification, secure native credential storage, native OCR and APK build, security/privacy review, recovery test, and user approval.
-- Never claim test completion when tests are blocked; record as BLOCKED.
+## Git and release policy
+- User has authorized routine GitHub commits and pushes at development milestones; no repeated approval is required.
+- Do not deploy, incur paid service costs, or publish a release without explicit approval.
+- No personal certificate records, credentials, passwords, secrets, or sensitive backups in Git.
+- Release gates include browser integration, real Samsung verification, secure credential storage, native OCR/APK where applicable, security review, recovery testing, and user approval.
+- The HTML prototype is not a secure production credential vault.
 
-## Scope and costs
-- Offline/free tests first. No deployment, Netlify, paid OCR, paid credits, or external service use without explicit approval.
-- Use fictional certificate data until encrypted storage and privacy controls are validated.
-- Minimize user requests; ask only for credentials, approvals, and actual device testing when necessary.
+## Test integrity
+- The GitHub workflow is manual-only until its actual test coverage and resource use are reviewed.
+- A committed test file is not proof the test ran or passed.
+- Never report historical V35 results as if they were current-branch test results.
