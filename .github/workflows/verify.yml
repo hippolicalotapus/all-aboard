@@ -1,7 +1,6 @@
-name: Verify application (manual until source import)
+name: Verify All Aboard
 
-# Manual-only until the real V35 application and regression tests are imported.
-# Avoid consuming GitHub Actions runner minutes on documentation-only commits.
+# Manual until V35 source and tests are committed.
 on:
   workflow_dispatch:
 
@@ -9,13 +8,20 @@ permissions:
   contents: read
 
 jobs:
-  verify:
+  regression:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - name: Ensure application source exists
-        run: test -s source/all-aboard-personal.html
+      - name: Require complete V35 import
+        run: |
+          test -s source/all-aboard-personal.html
+          test -s tests/run_all.py
+          test -s tests/check_v33.py
+          test -s tests/runtime_checks.js
+          test -s SHA256SUMS.txt
+      - name: Verify imported checksums
+        run: sha256sum -c SHA256SUMS.txt
       - name: Check for accidentally committed private keys
         shell: bash
         run: |
@@ -23,6 +29,7 @@ jobs:
             echo "Potential secrets committed"
             exit 1
           fi
-      - name: Validate inline JavaScript syntax
+      - name: Run full regression suite
+        run: python3 tests/run_all.py
+      - name: Validate inline JavaScript
         run: python3 tests/check_inline_js.py source/all-aboard-personal.html
-      # Enable regression suite only after importing the exact V35 test runner.
