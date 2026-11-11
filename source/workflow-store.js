@@ -13,8 +13,15 @@ const WorkflowStore = (() => {
    const key = [plan.kind,plan.role,plan.site].join(':');
    if (seen.has(key) || plan.completed.length > tasks.length || new Set(plan.completed).size !== plan.completed.length || plan.completed.some(id=>typeof id !== 'string' || !allowed.has(id))) throw Error('Invalid checklist steps or duplicate plan');
    seen.add(key);
-   // Allowlist fields: imported names, notes, credentials and unrelated data are discarded.
-   return {kind:plan.kind, role:plan.role, site:plan.site, completed:[...plan.completed]};
+   // V1 backups without dueDates remain valid. Keep only recognized task deadlines.
+   const result={kind:plan.kind,role:plan.role,site:plan.site,completed:[...plan.completed]};
+   if(Object.hasOwn(plan,'dueDates')){
+    if(!plan.dueDates||Array.isArray(plan.dueDates)||typeof plan.dueDates!=='object')throw Error('Invalid task deadlines');
+    const dates=Object.entries(plan.dueDates);
+    if(dates.length>tasks.length||dates.some(([id,date])=>!allowed.has(id)||!model.isDate(date)))throw Error('Invalid task deadline or unknown task');
+    result.dueDates=Object.fromEntries(dates);
+   }
+   return result;
   });
   return {format:FORMAT,plans};
  }

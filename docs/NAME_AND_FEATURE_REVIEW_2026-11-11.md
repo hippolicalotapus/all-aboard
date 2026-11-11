@@ -41,7 +41,7 @@ The user's requirement is to cover every advertised capability of these research
 | Offboarding | Cadalys | Saved checklist for handover, equipment return, access closure and final review | A; actual account revocation requires integration |
 | Role/location/profile-based procedures | Cadalys | Office/field roles and office/remote/jobsite templates; no employee profiles | A/B |
 | Cross-department task ownership | Cadalys | Owner labels only; no assignments or authenticated approvers | B |
-| Progress and bottleneck dashboards | Both | Checklist completion count only | B |
+| Progress and bottleneck dashboards | Both | Saved task deadlines, filters and cross-plan overdue/due-today attention queue (V39); no staff reporting workspace | B |
 | Audit history and compliance reporting | Cadalys | Local duplicate review; no employer audit trail | B |
 | Training assignments and learning management | CloudNow/Cadalys | Certificate storage; new training-review checklist item | C: course assignment, content, assessments and completion records |
 | Benefits administration | CloudNow | Not implemented | D: eligibility, enrolment workflows and administrator review |
@@ -81,3 +81,7 @@ Executed: existing 10 regression assertions, 9 Node VM runtime checks, 10 new wo
 ## V37 follow-up
 
 Checklist progress now persists separately, with its own backup, inspected restore and confirmed reset. See V37_CHECKLIST_RECOVERY.md for validation and remaining restrictions. The V36 section above is historical evidence, not current persistence behavior.
+
+## V39 follow-up
+
+Task deadlines and a cross-plan attention queue are implemented in the fictional-data prototype. See V39_TASK_DEADLINES.md for tested behavior and limitations. Secure employer assignments, authenticated approvals and server-backed employee records remain unimplemented.

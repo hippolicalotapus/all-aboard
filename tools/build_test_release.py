@@ -19,5 +19,5 @@ class Check(HTMLParser):
         if self.sections<0: raise ValueError('Unbalanced workspace sections')
 raw=source.read_bytes();parser=Check();parser.feed(raw.decode());assert parser.sections==0
 for name in ['walletWorkspace','companyWorkspace','testingWorkspace','openWallet','openCompany']: assert name in parser.ids
-out=root/'dist/Employee_Onboarding_Test_v38.html';out.parent.mkdir(exist_ok=True);out.write_bytes(raw)
+out=root/'dist/Employee_Onboarding_Test_v39.html';out.parent.mkdir(exist_ok=True);out.write_bytes(raw)
 print(str(out));print('SHA256',hashlib.sha256(raw).hexdigest())

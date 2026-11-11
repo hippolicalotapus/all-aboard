@@ -3,7 +3,7 @@
 from pathlib import Path
 import subprocess,sys
 root=Path(__file__).resolve().parents[1]
-checks=[['python3','tests/check_v33.py'],['node','tests/runtime_checks.js'],['node','tests/workflow_checks.js'],['node','tests/workflow_store_checks.js'],['node','tests/ui_integration_checks.js']]
+checks=[['python3','tests/check_v33.py'],['node','tests/runtime_checks.js'],['node','tests/workflow_checks.js'],['node','tests/workflow_store_checks.js'],['node','tests/ui_integration_checks.js'],['node','tests/workflow_deadline_checks.js']]
 failed=False
 for cmd in checks:
     print('RUN:', ' '.join(cmd),flush=True)
