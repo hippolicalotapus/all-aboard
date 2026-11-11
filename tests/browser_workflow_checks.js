@@ -16,6 +16,8 @@ const server=http.createServer((req,res)=>{res.setHeader('Content-Type','text/ht
   await page.locator('#workflowTaskFilter').selectOption('overdue');
   assert.equal(await page.locator('#workflowTaskFilter').inputValue(),'overdue');
   await page.locator('#workflowRefresh').click();
+  await page.locator('#workflowTaskFilter').selectOption('upcoming');
+  assert.equal(await page.locator('#workflowTaskFilter').inputValue(),'upcoming');
   await page.locator('#workflowTaskFilter').selectOption('all');
   assert.equal(await page.locator('#workflowTaskFilter').inputValue(),'all');
   console.log('PASS: V39 deadline filter and attention refresh controls respond');
