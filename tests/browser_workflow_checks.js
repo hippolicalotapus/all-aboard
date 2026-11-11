@@ -11,11 +11,11 @@ const server=http.createServer((req,res)=>{res.setHeader('Content-Type','text/ht
   browser=await chromium.launch({headless:true,executablePath,args:['--no-sandbox']});
   const page=await browser.newPage({viewport:{width:390,height:844}}),errors=[];
   page.on('pageerror',error=>errors.push(error.message));page.on('dialog',dialog=>dialog.accept());
-  await page.goto('http://127.0.0.1:'+server.address().port);
+  await page.goto('http://127.0.0.1:'+server.address().port);await page.locator('#openCompany').click();
   await page.locator('#workflowRole').selectOption('field');await page.locator('#workflowSite').selectOption('jobsite');
   await page.getByRole('checkbox',{name:/Confirm start arrangements/}).check();
   assert.match(await page.locator('#workflowStorageStatus').innerText(),/saved and read back/);
-  await page.reload();await page.locator('#workflowRole').selectOption('field');await page.locator('#workflowSite').selectOption('jobsite');
+  await page.reload();await page.locator('#openCompany').click();await page.locator('#workflowRole').selectOption('field');await page.locator('#workflowSite').selectOption('jobsite');
   assert(await page.getByRole('checkbox',{name:/Confirm start arrangements/}).isChecked());
   console.log('PASS: checklist acknowledgement survives browser reload');
   await page.locator('#workflowKind').selectOption('offboarding');
@@ -36,7 +36,7 @@ const server=http.createServer((req,res)=>{res.setHeader('Content-Type','text/ht
   assert.equal(await page.evaluate(()=>localStorage.getItem('onboarding-fictional-workflows-v1')),before);
   console.log('PASS: malformed restore leaves saved checklist unchanged');
   await page.evaluate(()=>{localStorage.setItem('onboardflow-fictional-wallet-v2','[]');localStorage.setItem('onboarding-fictional-workflows-v1','corrupted')});
-  await page.reload();assert(await page.getByRole('checkbox',{name:/Confirm start arrangements/}).isDisabled());
+  await page.reload();await page.locator('#openCompany').click();assert(await page.getByRole('checkbox',{name:/Confirm start arrangements/}).isDisabled());
   assert.match(await page.locator('#workflowStorageStatus').innerText(),/not been overwritten/);
   assert.equal(await page.evaluate(()=>localStorage.getItem('onboarding-fictional-workflows-v1')),'corrupted');
   await page.locator('#workflowRecover').click();assert(!await page.getByRole('checkbox',{name:/Confirm start arrangements/}).isDisabled());
