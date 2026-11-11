@@ -1,0 +1,33 @@
+name: Verify development files
+
+on:
+  push:
+    branches: [development]
+  pull_request:
+    branches: [main, development]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check for accidentally committed private keys
+        shell: bash
+        run: |
+          if git ls-files | grep -E '(^|/)(\.env$|[^/]+\.(pem|key|jks|keystore|p12)$)'; then
+            echo "Potential secrets committed"
+            exit 1
+          fi
+      - name: Validate application JavaScript when source is present
+        shell: bash
+        run: |
+          if [ -f source/all-aboard-personal.html ]; then
+            python3 tests/check_inline_js.py source/all-aboard-personal.html
+          else
+            echo "Application source not yet imported; syntax test deferred"
+          fi
