@@ -1,0 +1,27 @@
+# Local and sensitive data
+.env
+.env.*
+!.env.example
+*.keystore
+*.jks
+*.p12
+*.pem
+*.key
+*.sqlite
+*.db
+*.log
+*.bak
+*.backup
+*.ics
+*.apk
+*.aab
+node_modules/
+__pycache__/
+.pytest_cache/
+playwright-report/
+test-results/
+coverage/
+.DS_Store
+# Never commit personal certificate wallet backups
+*wallet*.json
+*certificate-backup*.json
