@@ -9,13 +9,15 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 TESTS = ROOT / "tests"
-REQUIRED = ("check_v33.py", "runtime_checks.js")
+REQUIRED = ("check_v33.py", "runtime_checks.js", "check_inline_js.py")
 for name in REQUIRED:
     if not (TESTS / name).is_file():
         print(f"FAIL: required regression module missing: {name}", flush=True)
         sys.exit(1)
 
-checks = [["python3", "tests/check_v33.py"]]
+checks = [["python3", "tests/check_v33.py"],
+          ["python3", "tests/check_inline_js.py", "source/all-aboard-personal.html"],
+          ["python3", "tools/build_test_release.py"]]
 # Syntax-check every standalone source module, including newly added ones.
 source_modules = sorted((ROOT / "source").glob("*.js"))
 if not source_modules:
