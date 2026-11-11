@@ -15,16 +15,23 @@ for name in REQUIRED:
         print(f"FAIL: required regression module missing: {name}", flush=True)
         sys.exit(1)
 
-checks = [["python3", "tests/check_v33.py"],
-          ["python3", "tests/check_inline_js.py", "source/all-aboard-personal.html"],
-          ]
+checks = [
+    ["python3", "tests/check_v33.py"],
+    ["python3", "tests/check_inline_js.py", "source/all-aboard-personal.html"],
+]
 # Syntax-check every standalone source module, including newly added ones.
 source_modules = sorted((ROOT / "source").glob("*.js"))
 if not source_modules:
     print("FAIL: no standalone JavaScript source modules found", flush=True)
     sys.exit(1)
 checks.extend(["node", "--check", str(path.relative_to(ROOT))] for path in source_modules)
-checks.extend(["node", str(path.relative_to(ROOT))] for path in sorted(TESTS.glob("*_checks.js")))
+# Browser checks require Playwright/Chromium and are an independent release gate.
+# Never accidentally run them as part of the offline-only suite.
+offline_js_checks = [
+    path for path in sorted(TESTS.glob("*_checks.js"))
+    if not path.name.startswith("browser_")
+]
+checks.extend(["node", str(path.relative_to(ROOT))] for path in offline_js_checks)
 if not any("runtime_checks.js" in cmd for cmd in checks):
     print("FAIL: runtime_checks.js was not discovered", flush=True)
     sys.exit(1)
