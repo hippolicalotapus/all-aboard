@@ -1,10 +1,8 @@
-name: Verify development files
+name: Verify application (manual until source import)
 
+# Manual-only until the real V35 application and regression tests are imported.
+# Avoid consuming GitHub Actions runner minutes on documentation-only commits.
 on:
-  push:
-    branches: [development]
-  pull_request:
-    branches: [main, development]
   workflow_dispatch:
 
 permissions:
@@ -16,6 +14,8 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+      - name: Ensure application source exists
+        run: test -s source/all-aboard-personal.html
       - name: Check for accidentally committed private keys
         shell: bash
         run: |
@@ -23,11 +23,6 @@ jobs:
             echo "Potential secrets committed"
             exit 1
           fi
-      - name: Validate application JavaScript when source is present
-        shell: bash
-        run: |
-          if [ -f source/all-aboard-personal.html ]; then
-            python3 tests/check_inline_js.py source/all-aboard-personal.html
-          else
-            echo "Application source not yet imported; syntax test deferred"
-          fi
+      - name: Validate inline JavaScript syntax
+        run: python3 tests/check_inline_js.py source/all-aboard-personal.html
+      # Enable regression suite only after importing the exact V35 test runner.
