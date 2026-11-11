@@ -16,6 +16,6 @@ jobs:
           from pathlib import Path
           readme = Path('README.md').read_text()
           assert 'V35' in readme, 'Preserve the V35 recovery requirement'
-          assert 'not an application release' in readme
+          assert 'not treat this initial README as an application release' in readme
           print('Checkpoint guard passed; application tests require recovered V35 source')
           PY
