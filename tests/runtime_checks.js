@@ -1,6 +1,6 @@
 const fs=require('fs'),vm=require('vm'),assert=require('assert');
 const src=fs.readFileSync(require('path').join(__dirname,'../source/all-aboard-personal.html'),'utf8');
-function extract(name){const begin=src.indexOf('function '+name+'(');assert(begin>=0,name+' not found');let open=src.indexOf('{',begin),depth=0,quote=null,escape=false;for(let i=open;i<src.length;i++){const c=src[i];if(quote){if(escape)escape=false;else if(c==='\\')escape=true;else if(c===quote)quote=null;continue}if(c==='"'||c==="'"||c==="'"){quote=c;continue}if(c==='{')depth++;if(c==='}'&&--depth===0)return src.slice(begin,i+1)}throw Error('unclosed '+name)}
+function extract(name){const begin=src.indexOf('function '+name+'(');assert(begin>=0,name+' not found');let open=src.indexOf('{',begin),depth=0,quote=null,escape=false;for(let i=open;i<src.length;i++){const c=src[i];if(quote){if(escape)escape=false;else if(c==='\\')escape=true;else if(c===quote)quote=null;continue}if(c==='"'||c==="'"||c==='`'){quote=c;continue}if(c==='{')depth++;if(c==='}'&&--depth===0)return src.slice(begin,i+1)}throw Error('unclosed '+name)}
 const data=new Map();let fail=false,readback=false;
 const storage={setItem(k,v){if(fail)throw Error('storage full');data.set(k,v)},getItem(k){return readback?'mismatch':data.get(k)??null}};
 const ctx=vm.createContext({localStorage:storage,KEY:'onboardflow-fictional-wallet-v2',wallet:[]});
