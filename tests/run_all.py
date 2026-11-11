@@ -16,6 +16,12 @@ for name in REQUIRED:
         sys.exit(1)
 
 checks = [["python3", "tests/check_v33.py"]]
+# Syntax-check every standalone source module, including newly added ones.
+source_modules = sorted((ROOT / "source").glob("*.js"))
+if not source_modules:
+    print("FAIL: no standalone JavaScript source modules found", flush=True)
+    sys.exit(1)
+checks.extend(["node", "--check", str(path.relative_to(ROOT))] for path in source_modules)
 checks.extend(["node", str(path.relative_to(ROOT))] for path in sorted(TESTS.glob("*_checks.js")))
 if not any("runtime_checks.js" in cmd for cmd in checks):
     print("FAIL: runtime_checks.js was not discovered", flush=True)
