@@ -1,0 +1,48 @@
+'use strict';
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),http=require('node:http');
+const {chromium}=require(require.resolve('playwright',{paths:[process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES||process.cwd()]}));
+const html=fs.readFileSync(path.join(__dirname,'../source/all-aboard-personal.html'));
+const server=http.createServer((req,res)=>{res.setHeader('Content-Type','text/html; charset=utf-8');res.end(html)});
+(async()=>{
+ let browser;
+ try{
+  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+  const executablePath=process.env.WORKFLOW_CHROMIUM_PATH || (fs.existsSync('/usr/bin/chromium')?'/usr/bin/chromium':undefined);
+  browser=await chromium.launch({headless:true,executablePath,args:['--no-sandbox']});
+  const page=await browser.newPage({viewport:{width:390,height:844}}),errors=[];
+  page.on('pageerror',error=>errors.push(error.message));page.on('dialog',dialog=>dialog.accept());
+  await page.goto('http://127.0.0.1:'+server.address().port);
+  await page.locator('#workflowRole').selectOption('field');await page.locator('#workflowSite').selectOption('jobsite');
+  await page.getByRole('checkbox',{name:/Confirm start arrangements/}).check();
+  assert.match(await page.locator('#workflowStorageStatus').innerText(),/saved and read back/);
+  await page.reload();await page.locator('#workflowRole').selectOption('field');await page.locator('#workflowSite').selectOption('jobsite');
+  assert(await page.getByRole('checkbox',{name:/Confirm start arrangements/}).isChecked());
+  console.log('PASS: checklist acknowledgement survives browser reload');
+  await page.locator('#workflowKind').selectOption('offboarding');
+  assert(!await page.getByRole('checkbox',{name:/Complete work handover/}).isChecked());
+  console.log('PASS: lifecycle checklists retain independent progress');
+  const exportPromise=page.waitForEvent('download');await page.locator('#workflowExport').click();
+  const download=await exportPromise;const raw=fs.readFileSync(await download.path(),'utf8');assert.equal(JSON.parse(raw).plans[0].completed[0],'start');
+  await page.locator('#workflowRecover').click();
+  await page.locator('#workflowImport').setInputFiles({name:'backup.json',mimeType:'application/json',buffer:Buffer.from(raw)});
+  await page.getByText(/Inspected 1 checklist/).waitFor();
+  assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('onboarding-fictional-workflows-v1')).plans.length),0);
+  await page.locator('#workflowRestore').click();
+  assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('onboarding-fictional-workflows-v1')).plans.length),1);
+  console.log('PASS: exported backup previews before confirmed restore');
+  const before=await page.evaluate(()=>localStorage.getItem('onboarding-fictional-workflows-v1'));
+  await page.locator('#workflowImport').setInputFiles({name:'invalid.json',mimeType:'application/json',buffer:Buffer.from('{"format":"wrong","plans":[]}')});
+  await page.getByText(/Backup rejected:/).waitFor();assert(await page.locator('#workflowRestore').isDisabled());
+  assert.equal(await page.evaluate(()=>localStorage.getItem('onboarding-fictional-workflows-v1')),before);
+  console.log('PASS: malformed restore leaves saved checklist unchanged');
+  await page.evaluate(()=>{localStorage.setItem('onboardflow-fictional-wallet-v2','[]');localStorage.setItem('onboarding-fictional-workflows-v1','corrupted')});
+  await page.reload();assert(await page.getByRole('checkbox',{name:/Confirm start arrangements/}).isDisabled());
+  assert.match(await page.locator('#workflowStorageStatus').innerText(),/not been overwritten/);
+  assert.equal(await page.evaluate(()=>localStorage.getItem('onboarding-fictional-workflows-v1')),'corrupted');
+  await page.locator('#workflowRecover').click();assert(!await page.getByRole('checkbox',{name:/Confirm start arrangements/}).isDisabled());
+  assert.equal(await page.evaluate(()=>localStorage.getItem('onboardflow-fictional-wallet-v2')),'[]');
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+  assert.deepEqual(errors,[]);
+  console.log('PASS: corrupt checklist recovery preserves certificate storage; mobile width and page errors checked');
+ }finally{if(browser)await browser.close();await new Promise(resolve=>server.close(resolve))}
+})().catch(error=>{console.error(error);process.exitCode=1});

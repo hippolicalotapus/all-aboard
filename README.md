@@ -2,9 +2,9 @@
 
 Former working name: All Aboard. That name overlaps existing onboarding products and is being retired. **Onboard to Work** is the leading screened candidate, not a legally cleared or adopted brand.
 
-## Current development milestone: V36
+## Current development milestone: V37
 
-The fictional-data certificate-wallet prototype and tests are imported on `development`. V36 adds onboarding, reboarding, role-transfer and offboarding checklists tailored to role and work setting. Tasks show owners and remaining steps. Checklist acknowledgements are simulated and session-only, not authenticated approvals; they are excluded from wallet backups.
+The fictional-data certificate-wallet prototype and tests are imported on `development`. V37 saves onboarding, reboarding, role-transfer and offboarding checklist progress separately from certificate records. It adds checklist backup export, validated restore previews and confirmed resets. Tasks show owners and remaining steps. Acknowledgements are simulated, not authenticated approvals. Checklist backups and certificate backups are separate.
 
 Open `source/all-aboard-personal.html` for the self-contained prototype. The legacy filename preserves development continuity. Do not enter real employee records or certificates.
 
@@ -12,7 +12,9 @@ Open `source/all-aboard-personal.html` for the self-contained prototype. The leg
 
 Run `python3 tests/run_all.py` and `python3 tests/check_inline_js.py source/all-aboard-personal.html`.
 
-Current local result: 10 existing regression assertions, 9 wallet runtime checks and 10 workflow scenarios passed; embedded workflow source consistency and inline JavaScript syntax passed. Browser integration and Android device testing remain unverified.
+Current local result: 10 existing regression assertions, 9 wallet runtime checks and 10 workflow scenarios and 14 checklist persistence scenarios passed; embedded workflow source consistency and inline JavaScript syntax passed. Browser integration was attempted but blocked at Chromium launch by environment socket restrictions. Android device testing remains unverified.
+
+Optional browser integration command: `node tests/browser_workflow_checks.js`. It requires Playwright and a runnable Chromium installation. The offline runner does not count this test as passing. See [V37 implementation evidence](docs/V37_CHECKLIST_RECOVERY.md).
 
 ## Product and name decisions
 

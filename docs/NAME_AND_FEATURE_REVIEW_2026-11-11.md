@@ -35,10 +35,10 @@ The user's requirement is to cover every advertised capability of these research
 | Capability | Evidence | Our current state | Build milestone |
 | --- | --- | --- | --- |
 | Employee profile and record management | CloudNow | Certificate wallet prototype only; no employer directory | B: secure employer workspace |
-| New hire onboarding | Both | New session-only checklist prototype | A: persist plans, task owners and deadlines |
-| Returning employee onboarding | Cadalys | New session-only checklist prototype | A |
-| Role transfers | Cadalys | New session-only checklist prototype | A |
-| Offboarding | Cadalys | New checklist for handover, equipment return, access closure and final review | A; actual account revocation requires integration |
+| New hire onboarding | Both | Saved checklist prototype (V37; local fictional data) | A: persist plans, task owners and deadlines |
+| Returning employee onboarding | Cadalys | Saved checklist prototype (V37; local fictional data) | A |
+| Role transfers | Cadalys | Saved checklist prototype (V37; local fictional data) | A |
+| Offboarding | Cadalys | Saved checklist for handover, equipment return, access closure and final review | A; actual account revocation requires integration |
 | Role/location/profile-based procedures | Cadalys | Office/field roles and office/remote/jobsite templates; no employee profiles | A/B |
 | Cross-department task ownership | Cadalys | Owner labels only; no assignments or authenticated approvers | B |
 | Progress and bottleneck dashboards | Both | Checklist completion count only | B |
@@ -77,3 +77,7 @@ Added a self-contained checklist interface to the existing HTML prototype and a 
 Preserved `onboardflow-fictional-wallet-v2` localStorage, `onboardflow-fictional-v2` backup format, source path and existing certificate behavior. Final branding remains pending selection and further screening.
 
 Executed: existing 10 regression assertions, 9 Node VM runtime checks, 10 new workflow scenarios, embedded model/source equality and inline JavaScript syntax validation. Browser integration and Samsung device testing were not run. No APK, production deployment, paid service, customer outreach or completed name registration is claimed.
+
+## V37 follow-up
+
+Checklist progress now persists separately, with its own backup, inspected restore and confirmed reset. See V37_CHECKLIST_RECOVERY.md for validation and remaining restrictions. The V36 section above is historical evidence, not current persistence behavior.

@@ -2,7 +2,7 @@
 
 ## Source of truth
 - Private GitHub repository, `development` branch for tested milestones, `main` for reviewed releases.
-- Baseline application: local V35 checkpoint ZIP, **not yet imported**. Never mistake this documentation-only branch for the working application.
+- Baseline application: imported V35 checkpoint on `development`, extended by tested V36/V37 changes. This is still a fictional-data prototype.
 - Do not overwrite or recreate the existing application from memory. Import the exact checkpoint source and tests, then verify checksums.
 - Keep source, tests, handoff, and build instructions together in GitHub.
 
@@ -22,6 +22,6 @@
 - GitHub source history does not back up users' on-device certificate data.
 
 ## Current status
-- GitHub initialized; V35 application source and tests await import.
-- V35 local checkpoint is the current verified handoff.
+- V35 source and tests are imported. V37 adds separate checklist persistence and backup/recovery.
+- Current README and V37_CHECKLIST_RECOVERY.md describe the current checkpoint.
 - Browser automation and Android verification remain incomplete.
