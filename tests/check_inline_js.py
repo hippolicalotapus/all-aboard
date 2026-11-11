@@ -9,10 +9,10 @@ import tempfile
 def main():
     path = pathlib.Path(sys.argv[1])
     text = path.read_text(encoding="utf-8")
-    scripts = re.findall(r"<script\\b([^>]*)>(.*?)</script\\s*>", text, flags=re.I | re.S)
+    scripts = re.findall(r"<script\b([^>]*)>(.*?)</script\s*>", text, flags=re.I | re.S)
     checked = 0
     for attrs, script in scripts:
-        if re.search(r"\\bsrc\\s*=", attrs, re.I) or not script.strip():
+        if re.search(r"\bsrc\s*=", attrs, re.I) or not script.strip():
             continue
         with tempfile.NamedTemporaryFile(mode="w", suffix=".js", encoding="utf-8") as f:
             f.write(script)
