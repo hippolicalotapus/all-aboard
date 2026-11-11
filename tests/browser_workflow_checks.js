@@ -20,6 +20,23 @@ const server=http.createServer((req,res)=>{res.setHeader('Content-Type','text/ht
   assert.equal(await page.locator('#workflowTaskFilter').inputValue(),'all');
   console.log('PASS: V39 deadline filter and attention refresh controls respond');
   await page.locator('#workflowRole').selectOption('field');await page.locator('#workflowSite').selectOption('jobsite');
+  // V39 integration: saving a past deadline updates both the filter and attention queue.
+  const yesterday=await page.evaluate(()=>{
+    const d=new Date();d.setDate(d.getDate()-1);
+    return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
+  });
+  const firstDeadline=page.locator('#workflowTasks input[type="date"]').first();
+  await firstDeadline.fill(yesterday);
+  assert.match(await page.locator('#workflowAttention').innerText(),/Confirm start arrangements/);
+  await page.locator('#workflowTaskFilter').selectOption('overdue');
+  assert.match(await page.locator('#workflowTasks').innerText(),/Confirm start arrangements/);
+  await page.reload();await page.locator('#openCompany').click();
+  await page.locator('#workflowRole').selectOption('field');await page.locator('#workflowSite').selectOption('jobsite');
+  await page.locator('#workflowTaskFilter').selectOption('overdue');
+  assert.equal(await page.locator('#workflowTasks input[type="date"]').first().inputValue(),yesterday);
+  await page.locator('#workflowTasks input[type="date"]').first().fill('');
+  await page.locator('#workflowTaskFilter').selectOption('all');
+  console.log('PASS: V39 deadline persists across reload, filters overdue tasks, and appears in attention queue');
   await page.getByRole('checkbox',{name:/Confirm start arrangements/}).check();
   assert.match(await page.locator('#workflowStorageStatus').innerText(),/saved and read back/);
   await page.reload();await page.locator('#openCompany').click();await page.locator('#workflowRole').selectOption('field');await page.locator('#workflowSite').selectOption('jobsite');
