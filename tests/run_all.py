@@ -17,7 +17,7 @@ for name in REQUIRED:
 
 checks = [["python3", "tests/check_v33.py"],
           ["python3", "tests/check_inline_js.py", "source/all-aboard-personal.html"],
-          ["python3", "tools/build_test_release.py"]]
+          ]
 # Syntax-check every standalone source module, including newly added ones.
 source_modules = sorted((ROOT / "source").glob("*.js"))
 if not source_modules:
@@ -35,6 +35,15 @@ for cmd in checks:
     result = subprocess.run(cmd, cwd=ROOT, check=False)
     if result.returncode:
         failed.append((" ".join(cmd), result.returncode))
+
+if not failed:
+    build = ["python3", "tools/build_test_release.py"]
+    print("RUN:", " ".join(build), flush=True)
+    result = subprocess.run(build, cwd=ROOT, check=False)
+    if result.returncode:
+        failed.append((" ".join(build), result.returncode))
+else:
+    print("SKIP: release build because regression checks failed", flush=True)
 
 print(f"Offline regression modules executed: {len(checks)}", flush=True)
 print("Browser E2E and Android device tests: NOT RUN", flush=True)
