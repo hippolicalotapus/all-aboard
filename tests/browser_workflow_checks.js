@@ -12,6 +12,13 @@ const server=http.createServer((req,res)=>{res.setHeader('Content-Type','text/ht
   const page=await browser.newPage({viewport:{width:390,height:844}}),errors=[];
   page.on('pageerror',error=>errors.push(error.message));page.on('dialog',dialog=>dialog.accept());
   await page.goto('http://127.0.0.1:'+server.address().port);await page.locator('#openCompany').click();
+  // V39 browser smoke: deadline filters and attention refresh must remain usable.
+  await page.locator('#workflowTaskFilter').selectOption('overdue');
+  assert.equal(await page.locator('#workflowTaskFilter').inputValue(),'overdue');
+  await page.locator('#workflowRefresh').click();
+  await page.locator('#workflowTaskFilter').selectOption('all');
+  assert.equal(await page.locator('#workflowTaskFilter').inputValue(),'all');
+  console.log('PASS: V39 deadline filter and attention refresh controls respond');
   await page.locator('#workflowRole').selectOption('field');await page.locator('#workflowSite').selectOption('jobsite');
   await page.getByRole('checkbox',{name:/Confirm start arrangements/}).check();
   assert.match(await page.locator('#workflowStorageStatus').innerText(),/saved and read back/);
