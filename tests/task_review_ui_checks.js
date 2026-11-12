@@ -1,0 +1,11 @@
+'use strict';
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
+const html=fs.readFileSync(path.join(__dirname,'../source/all-aboard-personal.html'),'utf8');
+const source=fs.readFileSync(path.join(__dirname,'../source/task-review.js'),'utf8');
+let count=0;const check=(name,fn)=>{fn();count++;console.log('PASS:',name)};
+check('embedded task-review module matches standalone source',()=>assert.equal(html.split('// BEGIN TASK REVIEW\n')[1].split('// END TASK REVIEW')[0],source+'\n'));
+check('review panel has accessible task, status, note, and link controls',()=>{for(const id of ['taskReviewPanel','taskReviewTask','taskReviewStatus','taskReviewNote','taskReviewLink','taskReviewSave','taskReviewMessage'])assert.match(html,new RegExp('id="'+id+'"'))});
+check('review interface initializes after existing checklist rendering',()=>assert(html.indexOf('renderWorkflow();\n\n// Task review metadata')>html.indexOf('// END WORKFLOW STORE')));
+check('V39 checklist and wallet store identifiers remain present',()=>{assert(html.includes('onboarding-fictional-workflows-v1'));assert(html.includes('onboardflow-fictional-wallet-v2'))});
+check('review save explicitly disclaims employer approval',()=>assert(html.includes('This is not an employer approval.')));
+console.log(count+' task review UI checks passed');
