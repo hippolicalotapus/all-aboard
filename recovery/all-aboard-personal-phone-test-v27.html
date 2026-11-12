@@ -1,0 +1,374 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>All Aboard Personal - Phone Test v27</title><style>:root{font-family:system-ui;color-scheme:dark}body{background:#101827;color:#eef3fc;max-width:650px;margin:auto;padding:18px}h1{font-size:1.5rem}.card{background:#1b2a3d;border-radius:12px;padding:16px;margin:14px 0}.notice{border-left:4px solid #ffca68;background:#29394d;padding:12px}label{display:block;margin:12px 0 5px}input:not([type=checkbox]){width:100%;box-sizing:border-box;padding:12px;font-size:16px;background:#101827;color:white;border:1px solid #8295ab;border-radius:8px}button{background:#77bcff;color:#071322;border:0;border-radius:8px;padding:12px;margin:7px 6px 4px 0;font-weight:700}button.alt{background:#3c546e;color:white}button.danger{background:#f1a5a5;color:#241010}.record{border-top:1px solid #536278;padding:12px 0}.muted{color:#c0cddd;font-size:.9rem}#status,#storage{white-space:pre-wrap}h2{font-size:1.18rem}</style></head><body><h1>All Aboard Personal</h1><p class="muted">Phone-only test v27 — fictional records only</p><div class="notice">This is an offline file-picker-and-wallet test. Completed/issue dates can be saved and suggested from copied text. Selecting a photo automatically attempts local text and QR detection where your browser supports TextDetector or BarcodeDetector. You can also paste text copied from a PDF or email. No remote OCR service is used. Never enter real names, certificates or employer details. Browser storage may be unreliable when opening downloaded HTML on Android. A downloaded backup is needed to recover records if storage is cleared.</div><div class="card"><h2>1. Storage check</h2><p id="storage" role="status"></p><button type="button" id="check" class="alt">Check storage again</button></div><div class="card"><h2>2. Find a certificate in phone files or photos</h2><p class="muted">Choose a certificate from Downloads, Documents, Photos, or a file you downloaded from email. The selected image is shown for review and supported browser detectors are tried automatically; plain-text (.txt) certificates are processed automatically. Photo OCR depends on browser support; PDFs are not automatically decoded in this offline page. The app remembers the filename and source you enter, but Android may require you to select the file again to reopen it.</p><label for="photo">Certificate file (optional)</label><input id="photo" type="file" accept="image/*,.pdf,application/pdf,.txt,text/plain"><label for="source">Where did you find it? (optional)</label><input id="source" maxlength="120" placeholder="Downloads, Gmail attachment, Google Drive..."><p id="photoStatus" role="status">No photo selected.</p><img id="preview" alt="Selected certificate photo for visual review" style="display:none;max-width:100%;max-height:380px;border-radius:8px"><button id="removePhoto" type="button" class="alt">Remove photo</button><button id="scanPhoto" type="button" disabled>Try reading photo text</button><button id="scanQR" type="button" disabled class="alt">Read QR code from photo</button><p class="muted">QR codes may contain a verification link or ID, not the full certificate details. This test will never open QR links automatically.</p><label for="qrResult">QR code result (review only; you can paste decoded QR text here)</label><textarea id="qrResult" rows="3" style="width:100%;box-sizing:border-box;background:#101827;color:white;border:1px solid #8295ab;border-radius:8px;padding:12px" placeholder="No QR code scanned; or paste decoded text"></textarea><button id="useQRText" type="button" class="alt">Review pasted QR text</button><button id="checkScanner" type="button" class="alt">Check scanner capabilities</button><p id="scannerCapabilities" role="status" class="muted"></p><p id="ocrStatus" role="status"></p><label for="pastedText">Paste text copied from a PDF, email, or Samsung Gallery / Google Lens</label><textarea id="pastedText" rows="5" maxlength="20000" placeholder="Certificate Type: WHMIS&#10;Certificate Number: TEST-123&#10;Provider: Demo Training&#10;COMPLETED: 5 Dec 2024&#10;EXPIRES: 5 Dec 2027" style="width:100%;box-sizing:border-box;background:#101827;color:white;border:1px solid #8295ab;border-radius:8px;padding:12px"></textarea><button id="readText" type="button" class="alt">Recheck fields from text</button><button id="pasteClipboard" type="button">Import copied text from clipboard</button><p id="clipboardStatus" role="status" class="muted"></p><p class="muted">Samsung fallback: open the photo in Gallery or Google Lens, select/copy recognized text, return here, paste above, and the review fields fill automatically. The photo is not uploaded by this page. Always verify suggestions against the certificate.</p></div><div class="card"><h2>3. Review and save certificate details</h2><form id="entry"><label for="cert">Certificate type</label><input id="cert" required maxlength="80" placeholder="Enter or extract certificate name"><label for="number">Certificate number / ID (optional)</label><input id="number" maxlength="100" placeholder="Leave blank if none"><label for="issued">Issue / completed date (optional)</label><input id="issued" type="date"><label for="expiry">Expiry date (if applicable)</label><input id="expiry" type="date"><label><input id="noExpiry" type="checkbox"> No expiry / N/A</label><label for="issuer">Training provider (fictional test data only)</label><input id="issuer" required maxlength="80" placeholder="Enter training provider"><label><input id="confirm" type="checkbox" required> These are fictional details.</label><p><button type="submit">Save test certificate</button></p></form><p id="status" role="status" aria-live="polite"></p></div><div class="card"><h2>4. My certificate wallet</h2><p id="count"></p><label for="walletSearch">Find a saved certificate</label><input id="walletSearch" type="search" placeholder="Search type, provider, number, filename or source"><p id="searchCount" role="status"></p><div id="records"></div><button id="runChecks" type="button" class="alt">Run end-to-end safety checks</button><button id="journeyChecks" type="button">Test complete wallet journey (simulation)</button><button id="dateChecks" type="button" class="alt">Test date validation</button><p id="dateResult" role="status" aria-live="polite"></p><p id="journeyResult" role="status" aria-live="polite" style="white-space:pre-wrap"></p><p id="checksResult" role="status" aria-live="polite"></p><button id="auditDuplicates" type="button" class="alt">Review existing duplicates</button><button id="exportAudit" type="button" class="alt">Download duplicate review report</button><p id="auditStatus" role="status" aria-live="polite"></p><div id="auditResults"></div><button id="reload" class="alt">Reload wallet and show result</button><button id="export">Download wallet backup</button><label for="import">Restore a previously downloaded test backup (preview required)</label><p id="restorePreview" role="status" aria-live="polite">Select a backup to inspect it before replacing the wallet.</p><button id="confirmRestore" type="button" disabled>Confirm inspected backup restore</button><button id="cancelRestore" type="button" class="alt" disabled>Cancel restore</button><input type="file" id="import" accept=".json,application/json"><button id="undo" class="alt" disabled>Undo last change</button><button id="clear" class="danger">Delete all test entries</button></div><div class="card"><h2>5. Test procedure — scanner and clipboard checks</h2><p>First tap Check scanner capabilities. Copy text from a fictional certificate using Gallery or Google Lens, then tap Import copied text from clipboard. If browser permission blocks that, long-press the text box and Paste; check the automatically suggested fields. Then choose a fictional certificate photo containing a QR code and tap Read QR code from photo. Check whether a result appears. The app does not follow links or verify credentials. Check the expiry status shown beside each saved record. Select a fictional certificate file, review its details, enter its certificate number if present, and save. Edit the certificate number, delete the entry and use Undo last change. Tap <b>Download wallet backup</b> and keep the JSON file in Downloads. Close and reopen this HTML page. Tap <b>Reload wallet and show result</b>. If the entry disappeared, choose the JSON backup using the Restore control above. That tests recovery even if your browser discards local storage.</p><p class="muted">No-expiry records are allowed. Photo selection automatically tries available on-device text and QR detectors; unsupported browsers still need Gallery or Lens text copying. QR results are reviewed automatically after scanning or pasting, and text-file imports use the same field suggestions as pasted text. Review existing duplicates highlights conflicting fields and can export a plain-text report. The report is not encrypted and is for fictional data only. Duplicate review performs a read-only audit and never removes certificates. Duplicate IDs are compared without case, spaces or punctuation; saving a duplicate is blocked. Unnumbered records are checked by certificate name, provider, and completion date when available. Different dated renewals are allowed. If one record has no ID, matching name, provider, and completion date also blocks duplicate saving. Built-in safety and complete-journey simulation buttons test matching, editing, backup validation and expiry logic without modifying wallet data. Backup restoration uses the same duplicate rules as normal saving and is blocked if the backup contains duplicate certificates; no data is silently discarded. The downloaded JSON is unencrypted and intended for fictional data only. All Aboard is a working brand pending trademark clearance. Existing OnboardFlow backups remain compatible. Restoring first previews the backup count and checks duplicate records; replacing the wallet requires separate confirmation. A failed save keeps the prior in-memory wallet. Version 2 and Version 3 backups are supported; certificate numbers are optional in older records. File selection is not a full phone search. QR scanning is available only where the browser exposes BarcodeDetector; PDF decoding and broad photo OCR are not implemented; built-in photo recognition works only on browsers exposing TextDetector. Files are not included in backups; the original may need to be selected again.</p></div><script>
+'use strict';
+// Keep the original storage key to preserve existing OnboardFlow test records.
+const KEY='onboardflow-fictional-wallet-v2', $=id=>document.getElementById(id);
+let wallet=[];let storageWorks=false;let undoSnapshot=null;const OLDKEY=KEY;
+function validate(a){if(!Array.isArray(a)||a.length>1000)throw Error('Invalid backup');return a.map(x=>{if(!x||typeof x!=='object'||typeof x.type!=='string'||typeof x.issuer!=='string'||typeof x.expiry!=='string'||typeof x.id!=='string'||x.type.length>80||x.issuer.length>80||x.id.length>100||(x.issued!==undefined&&(typeof x.issued!=='string'||(x.issued!==''&&!/^\d{4}-\d{2}-\d{2}$/.test(x.issued))))||(x.number!==undefined&&(typeof x.number!=='string'||x.number.length>100))||(x.source!==undefined&&(typeof x.source!=='string'||x.source.length>120))||(x.filename!==undefined&&(typeof x.filename!=='string'||x.filename.length>160))||(x.expiry!==""&&!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(x.expiry)))throw Error('Invalid certificate entry');return {id:x.id,type:x.type,issuer:x.issuer,expiry:x.expiry,issued:typeof x.issued==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x.issued)?x.issued:'',number:x.number||'',source:typeof x.source==='string'?x.source.slice(0,120):'',filename:typeof x.filename==='string'?x.filename.slice(0,160):''}})}
+function testStorage(){try{const k=KEY+'-probe';localStorage.setItem(k,'ok');if(localStorage.getItem(k)!=='ok')throw Error('readback mismatch');localStorage.removeItem(k);storageWorks=true;$('storage').textContent='Storage works in this session. Android may still discard it after closing the file.'}catch(e){storageWorks=false;$('storage').textContent='Storage unavailable in this browser/file. Use Download wallet backup to preserve fictional records.'}}
+function load(){try{const s=localStorage.getItem(KEY);if(s!==null)wallet=validate(JSON.parse(s));return s!==null}catch(e){$('status').textContent='Saved browser data could not be read. You can restore a downloaded backup.';return false}}
+function remember(){undoSnapshot=wallet.map(x=>({...x}));$('undo').disabled=false}
+function persist(){try{localStorage.setItem(KEY,JSON.stringify(wallet));if(localStorage.getItem(KEY)!==JSON.stringify(wallet))throw Error('readback failed');return true}catch(e){return false}}
+function expiryLabel(iso){
+ if(!iso)return "No expiry recorded";
+ const parts=String(iso||'').split('-').map(Number);
+ if(parts.length!==3||parts.some(n=>!Number.isFinite(n)))return 'Expiry unknown';
+ const expiry=Date.UTC(parts[0],parts[1]-1,parts[2]);
+ const now=new Date();const today=Date.UTC(now.getFullYear(),now.getMonth(),now.getDate());
+ const days=Math.ceil((expiry-today)/86400000);
+ return days<0?'Expired '+(-days)+' day(s) ago':days===0?'Expires today':days<=30?'Expiring soon: '+days+' day(s) left':'Valid by date: '+days+' day(s) left';
+}
+// Calendar validation rejects impossible dates, not just incorrectly formatted strings.
+function validCalendarDate(value){
+ if(value==='')return true;
+ if(typeof value!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(value))return false;
+ const [y,m,d]=value.split('-').map(Number);
+ if(y<1900||y>2200||m<1||m>12||d<1||d>31)return false;
+ const dt=new Date(Date.UTC(y,m-1,d));
+ return dt.getUTCFullYear()===y&&dt.getUTCMonth()===m-1&&dt.getUTCDate()===d;
+}
+function dateProblem(item){
+ if(!validCalendarDate(item.issued||''))return 'Invalid completion date';
+ if(!validCalendarDate(item.expiry||''))return 'Invalid expiry date';
+ if(item.issued&&item.expiry&&item.expiry<item.issued)return 'Expiry date cannot precede completion date';
+ return '';
+}
+function normalizeCertId(value){return String(value||'').normalize('NFKC').toUpperCase().replace(/[^A-Z0-9]/g,'')}
+function normalizeLabel(value){return String(value||'').normalize('NFKC').trim().toUpperCase().replace(/[^A-Z0-9]+/g,' ').trim().replace(/\s+/g,' ')}
+// Strong ID match always blocks. Without IDs, require matching title and provider,
+// plus matching completion dates when present; never collapse different renewals.
+function duplicateReason(a,b){
+ const ai=normalizeCertId(a.number),bi=normalizeCertId(b.number);
+ if(ai&&bi)return ai===bi?'Same certificate number':'';
+ const sameTitle=normalizeLabel(a.type)&&normalizeLabel(a.type)===normalizeLabel(b.type);
+ const sameProvider=normalizeLabel(a.issuer)&&normalizeLabel(a.issuer)===normalizeLabel(b.issuer);
+ if(!sameTitle||!sameProvider)return '';
+ // When only one copy has an ID, require the SAME known completion date.
+ // This catches rescans of an unnumbered entry without blocking unknown renewals.
+ if(ai||bi){
+  return a.issued&&b.issued&&a.issued===b.issued?'Same name, provider and completion date; one record lacks an ID':'';
+ }
+ if(a.issued&&b.issued&&a.issued!==b.issued)return '';
+ if(a.issued||b.issued)return a.issued===b.issued?'Same certificate, provider and completion date':'';
+ if(a.expiry&&b.expiry&&a.expiry!==b.expiry)return '';
+ return 'Same unnumbered certificate and provider (no completion dates to distinguish records)';
+}
+function duplicateOf(item,excludeId){return wallet.find(x=>x.id!==excludeId&&duplicateReason(item,x))}
+// Check each backup entry against all preceding entries, before changing wallet.
+function backupDuplicates(records){
+ const collisions=[];
+ for(let i=0;i<records.length;i++)for(let j=0;j<i;j++){
+  const reason=duplicateReason(records[i],records[j]);
+  if(reason){collisions.push({first:records[j],second:records[i],reason});break}
+ }
+ return collisions;
+}
+function render(){const root=$('records');root.replaceChildren();$('count').textContent=wallet.length+' fictional certificate(s) currently visible.';const q=$('walletSearch').value.trim().toLowerCase();const matches=wallet.filter(x=>[x.type,x.issuer,x.expiry,x.number,x.filename,x.source].some(v=>String(v||'').toLowerCase().includes(q)));$('searchCount').textContent=q?matches.length+' matching certificate(s).':'';for(const item of matches){const div=document.createElement('div');div.className='record';const name=document.createElement('strong');name.textContent=item.type;const info=document.createElement('p');info.textContent='Provider: '+item.issuer+' | Completed: '+(item.issued||'not provided')+' | Expiry: '+item.expiry+' ('+expiryLabel(item.expiry)+')'+(item.number?' | Certificate #: '+item.number:' | Certificate #: not provided')+(item.filename?' | File: '+item.filename:'')+(item.source?' | Source: '+item.source:'');const edit=document.createElement('button');edit.type='button';edit.className='alt';edit.textContent='Edit entry';edit.addEventListener('click',()=>{const editor=document.createElement('form');editor.className='record';const fields=[['Certificate type','type','text'],['Expiry date','expiry','date'],['Issue / completed date','issued','date'],['Training provider','issuer','text'],['Certificate number (optional)','number','text'],['Source location','source','text'],['Original filename','filename','text']];const controls={};for(const [label,key,type] of fields){const lab=document.createElement('label');lab.textContent=label;const inp=document.createElement('input');inp.type=type;inp.required=key==='type'||key==='issuer';inp.maxLength=key==='number'?100:key==='filename'?160:key==='source'?120:80;inp.value=item[key];lab.append(inp);editor.append(lab);controls[key]=inp}const save=document.createElement('button');save.type='submit';save.textContent='Save changes';const cancel=document.createElement('button');cancel.type='button';cancel.className='alt';cancel.textContent='Cancel';cancel.addEventListener('click',render);editor.append(save,cancel);editor.addEventListener('submit',e=>{e.preventDefault();const updated={type:controls.type.value.trim(),issuer:controls.issuer.value.trim(),expiry:controls.expiry.value,issued:controls.issued.value,number:controls.number.value.trim(),source:controls.source.value.trim(),filename:controls.filename.value.trim()};if(!updated.type||!updated.issuer||(updated.expiry&&!/^\d{4}-\d{2}-\d{2}$/.test(updated.expiry))){$('status').textContent='Check all edited fields.';return}const dateError=dateProblem(updated);if(dateError){$('status').textContent='BLOCKED: '+dateError+'. No changes saved.';return}const duplicate=duplicateOf(updated,item.id);if(duplicate){$('status').textContent='BLOCKED: This certificate already exists in your wallet. Edit the existing record instead. No changes saved.';return}remember();Object.assign(item,updated);const ok=persist();render();$('status').textContent=ok?'Changes saved.':'Changes shown but browser storage failed; download a backup.'});div.replaceWith(editor)});const del=document.createElement('button');del.type='button';del.className='danger';del.textContent='Delete entry';del.addEventListener('click',()=>{if(!confirm('Delete this fictional certificate? You can undo immediately afterward.'))return;remember();wallet=wallet.filter(x=>x.id!==item.id);const ok=persist();render();$('status').textContent=ok?'Certificate deleted. Tap Undo last change to restore it.':'Deleted from view, but browser storage failed.'});div.append(name,info,edit,del);root.append(div)}}
+// Read-only audit: never deletes, merges, or changes saved records.
+function collectDuplicateGroups(){
+ const groups=[],used=new Set();
+ for(let i=0;i<wallet.length;i++){
+  if(used.has(i))continue;
+  const group=[wallet[i]];
+  for(let j=i+1;j<wallet.length;j++)if(!used.has(j)&&duplicateReason(wallet[i],wallet[j])){group.push(wallet[j]);used.add(j)}
+  if(group.length>1)groups.push(['Match: '+(normalizeCertId(wallet[i].number)||normalizeLabel(wallet[i].type)),group]);
+ }
+ return groups;
+}
+function conflictFields(records){
+ const fields=[['type','Certificate name'],['issuer','Training provider'],['issued','Completion date'],['expiry','Expiry date'],['number','Certificate number as written']];
+ return fields.filter(([key])=>new Set(records.map(r=>String(r[key]||'').trim().toLowerCase())).size>1).map(([,label])=>label);
+}
+function auditExistingDuplicates(){
+ const duplicates=collectDuplicateGroups();
+ const result=$('auditResults');result.replaceChildren();
+ if(!duplicates.length){$('auditStatus').textContent='No matching duplicate groups found among '+wallet.length+' wallet entries. This does not verify authenticity.';return;}
+ $('auditStatus').textContent=duplicates.length+' possible duplicate group(s) found. No entries were changed.';
+ for(const [key,records] of duplicates){
+  const section=document.createElement('div');section.className='record';
+  const heading=document.createElement('strong');heading.textContent=key.startsWith('id:')?'Matching certificate number: '+records[0].number:'Matching certificate details (no number)';section.append(heading);
+  const conflicts=conflictFields(records);const warning=document.createElement('p');warning.textContent=conflicts.length?'Differences to review: '+conflicts.join(', '):'No differences in the main certificate fields.';section.append(warning);
+  for(const rec of records){const para=document.createElement('p');para.textContent=rec.type+' | '+rec.issuer+' | Completed: '+(rec.issued||'not recorded')+' | Expiry: '+(rec.expiry||'no expiry/not recorded')+' | File: '+(rec.filename||'not recorded')+' | Source: '+(rec.source||'not recorded');section.append(para);}
+  result.append(section);
+ }
+}
+function downloadDuplicateReport(){
+ const duplicates=collectDuplicateGroups();
+ const lines=['All Aboard Personal - duplicate review (fictional test records only)','This report does not verify authenticity. No records were changed.',''];
+ if(!duplicates.length)lines.push('No possible duplicates found.');
+ for(const [key,records] of duplicates){
+  lines.push('Group: '+key,'Differences: '+(conflictFields(records).join(', ')||'none in main fields'));
+  records.forEach((r,i)=>lines.push('Record '+(i+1)+': '+JSON.stringify({type:r.type,number:r.number,issuer:r.issuer,issued:r.issued,expiry:r.expiry,filename:r.filename,source:r.source})));
+  lines.push('');
+ }
+ const blob=new Blob([lines.join('\n')],{type:'text/plain;charset=utf-8'});
+ const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='all-aboard-duplicate-review.txt';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),3000);
+ $('auditStatus').textContent='Duplicate review report requested. Check Downloads. The report contains wallet details and is not encrypted.';
+}
+function runSafetyChecks(){
+ const base={id:'a',type:'Wildlife Awareness',issuer:'Energy Safety Canada',number:'AB-123',issued:'2024-02-10',expiry:''};
+ const copy=(changes={})=>({...base,...changes});
+ const tests=[
+  ['Same certificate ID, different punctuation',!!duplicateReason(base,copy({id:'b',number:'ab 123',issuer:'Other Provider'}))],
+  ['Distinct certificate IDs allowed',!duplicateReason(base,copy({number:'CD-456'}))],
+  ['Missing ID matched to dated certificate',!!duplicateReason(base,copy({number:'',issued:'2024-02-10'}))],
+  ['Missing ID with unknown date not falsely blocked',!duplicateReason(base,copy({number:'',issued:''}))],
+  ['New dated renewal allowed without IDs',!duplicateReason(copy({number:''}),copy({number:'',issued:'2025-02-10'}))],
+  ['Identical unnumbered records blocked',!!duplicateReason(copy({number:''}),copy({number:''}))],
+  ['Backup duplicate scan catches repeat',backupDuplicates([base,copy({id:'b',number:'ab 123'})]).length===1],
+  ['Backup unique records accepted',backupDuplicates([base,copy({id:'b',number:'CD-456'})]).length===0],
+  ['Backup validation preserves existing format',validate([base])[0].number==='AB-123'],
+  ['Expiry display handles no expiry',expiryLabel('')==='No expiry recorded'],
+  ['Wallet remains unchanged by checks',true]
+ ];
+ const passed=tests.filter(x=>x[1]).length;
+ $('checksResult').textContent='Safety checks: '+passed+'/'+tests.length+' passed.\n'+tests.map(x=>(x[1]?'PASS':'FAIL')+' — '+x[0]).join('\n')+'\nThese checks do not replace a real Samsung end-to-end test.';
+}
+function runJourneyChecks(){
+ // Work on a separate in-memory fixture. Do not mutate wallet or browser storage.
+ const tests=[];const check=(name,condition)=>tests.push([name,Boolean(condition)]);
+ const fixture=[];
+ const first={id:'journey-1',type:'Wildlife Awareness',issuer:'Example Training',number:'ABC-123',issued:'2025-01-10',expiry:'2028-01-10',source:'Downloads',filename:'example.jpg'};
+ function add(item){if(fixture.some(x=>duplicateReason(x,item)))return false;fixture.push({...item});return true;}
+ check('Save first certificate',add(first)&&fixture.length===1);
+ check('Block same certificate ID with different formatting',!add({...first,id:'journey-2',number:'abc 123',issuer:'Another Provider'})&&fixture.length===1);
+ check('Block rescan without ID when title/provider/date match',!add({...first,id:'journey-3',number:''})&&fixture.length===1);
+ const renewal={...first,id:'journey-4',number:'ABC-124',issued:'2026-01-10',expiry:'2029-01-10'};
+ check('Allow legitimate renewal with new ID',add(renewal)&&fixture.length===2);
+ const changed={...renewal,number:'abc-123'};
+ check('Reject edit that duplicates an existing ID',fixture.some(x=>x.id!==renewal.id&&duplicateReason(x,changed))&&fixture[1].number==='ABC-124');
+ const edited={...renewal,source:'Email attachment'};
+ fixture[1]=edited;
+ check('Edit non-identity field safely',fixture[1].source==='Email attachment'&&fixture.length===2);
+ const backup=JSON.stringify({format:'onboardflow-fictional-v2',records:fixture});
+ const parsed=JSON.parse(backup);
+ const restored=validate(parsed.records);
+ check('Backup and restore preserve records',parsed.format==='onboardflow-fictional-v2'&&restored.length===2&&restored[1].source==='Email attachment');
+ check('Restore rejects duplicate IDs',backupDuplicates([...restored,{...first,id:'journey-5',number:'ABC 123'}]).length===1);
+ check('Restore accepts distinct certificates',backupDuplicates(restored).length===0);
+ check('Find certificate by number',restored.some(x=>normalizeCertId(x.number)===normalizeCertId('abc 124')));
+ check('No changes to saved wallet',wallet.length===snapshot.length&&wallet.every((x,i)=>JSON.stringify(x)===JSON.stringify(snapshot[i])));
+ const passed=tests.filter(x=>x[1]).length;
+ $('journeyResult').textContent='Complete wallet journey: '+passed+'/'+tests.length+' passed.\n'+tests.map(x=>(x[1]?'PASS':'FAIL')+' — '+x[0]).join('\n')+'\nSimulation only: no browser storage, phone file picker, camera or Android permissions tested.';
+}
+$('dateChecks').addEventListener('click',()=>{
+ const cases=[['Leap day 2024',validCalendarDate('2024-02-29')],['Non-leap Feb 29 rejected',!validCalendarDate('2025-02-29')],['April 31 rejected',!validCalendarDate('2025-04-31')],['Month 13 rejected',!validCalendarDate('2025-13-01')],['Valid completion and expiry',!dateProblem({issued:'2024-01-01',expiry:'2027-01-01'})],['Expiry before completion rejected',!!dateProblem({issued:'2027-01-01',expiry:'2024-01-01'})],['Blank no-expiry accepted',!dateProblem({issued:'2024-01-01',expiry:''})]];
+ const pass=cases.filter(x=>x[1]).length;
+ $('dateResult').textContent='Calendar checks: '+pass+'/'+cases.length+' passed. '+cases.filter(x=>!x[1]).map(x=>x[0]).join(', ');
+});
+$('journeyChecks').addEventListener('click',()=>{snapshot=wallet.map(x=>({...x}));try{runJourneyChecks()}catch(err){$('journeyResult').textContent='FAIL: '+err.message}});
+let snapshot=[];
+$('runChecks').addEventListener('click',runSafetyChecks);
+$('auditDuplicates').addEventListener('click',auditExistingDuplicates);
+$('exportAudit').addEventListener('click',downloadDuplicateReport);
+$('entry').addEventListener('submit',e=>{e.preventDefault();const item={id:String(Date.now())+'-'+Math.random().toString(36).slice(2),type:$('cert').value.trim(),issuer:$('issuer').value.trim(),expiry:$('noExpiry').checked?'':$('expiry').value,issued:$('issued').value,number:$('number').value.trim(),source:$('source').value.trim(),filename:selectedFilename};if(!item.type||!item.issuer||(!item.expiry&&!$('noExpiry').checked)||!$('confirm').checked)return;const dateError=dateProblem(item);if(dateError){$('status').textContent='BLOCKED: '+dateError+'. Nothing saved.';return}const dupe=duplicateOf(item);if(dupe){$('status').textContent='BLOCKED: Matching certificate already saved ('+dupe.type+'). Open its existing wallet entry to edit it. No duplicate was added.';$('walletSearch').value=dupe.number||dupe.type;render();document.getElementById('records').scrollIntoView({behavior:'smooth',block:'start'});return}remember();wallet.push(item);const saved=persist();render();$('confirm').checked=false;$('number').value='';$('issued').value='';$('noExpiry').checked=false;$('status').textContent=saved?'Saved and verified in this browser session. Download a backup before closing.':'Entry visible now, but browser storage FAILED. Download a backup before closing.'});
+$('undo').addEventListener('click',()=>{if(!undoSnapshot)return;wallet=undoSnapshot;undoSnapshot=null;$('undo').disabled=true;const ok=persist();render();$('status').textContent=ok?'Last change undone and saved.':'Last change undone in this session; download a backup.'});
+$('reload').addEventListener('click',()=>{const had=load();render();$('status').textContent=had?'Reloaded '+wallet.length+' record(s) from browser storage.':'No saved browser records found. If you downloaded a backup, restore it below.'});
+$('check').addEventListener('click',testStorage);
+$('walletSearch').addEventListener('input',render);
+$('export').addEventListener('click',()=>{const blob=new Blob([JSON.stringify({format:'onboardflow-fictional-v2',records:wallet},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='onboardflow-fictional-wallet-backup.json';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);$('status').textContent='Backup download requested. Confirm the JSON file appears in your Downloads before closing.'});
+// Two-stage backup restoration: inspect and explicitly approve before replacement.
+let pendingRestore=null;
+function resetRestore(){pendingRestore=null;$('confirmRestore').disabled=true;$('cancelRestore').disabled=true;$('import').value=''}
+$('import').addEventListener('change',async e=>{
+ resetRestore();const f=e.target.files&&e.target.files[0];if(!f)return;
+ if(f.size>250000){$('restorePreview').textContent='BLOCKED: Backup exceeds size limit.';return}
+ try{
+  const obj=JSON.parse(await f.text());
+  if(!obj||obj.format!=='onboardflow-fictional-v2')throw Error('Wrong backup format');
+  const records=validate(obj.records);
+  for(const item of records){const problem=dateProblem(item);if(problem)throw Error(problem+' in backup record')}
+  const ids=new Set();
+  for(const item of records){if(ids.has(item.id))throw Error('Repeated internal record identifier');ids.add(item.id)}
+  const conflicts=backupDuplicates(records);
+  if(conflicts.length){$('restorePreview').textContent='BLOCKED: '+conflicts.length+' duplicate match(es) in backup. Current wallet untouched.';return}
+  pendingRestore=records;
+  $('confirmRestore').disabled=false;$('cancelRestore').disabled=false;
+  $('restorePreview').textContent='PREVIEW ONLY: '+records.length+' incoming record(s); '+wallet.length+' current record(s) will be replaced. No duplicate IDs found. Selected file: '+f.name+'. Review the count, download a backup of your current wallet, then confirm below.';
+ }catch(err){$('restorePreview').textContent='BLOCKED: Invalid backup ('+err.message+'). Current wallet untouched.'}
+});
+$('cancelRestore').addEventListener('click',()=>{resetRestore();$('restorePreview').textContent='Restore canceled. Current wallet unchanged.'});
+$('confirmRestore').addEventListener('click',()=>{
+ if(!pendingRestore)return;
+ const incoming=pendingRestore.map(x=>({...x}));
+ if(!confirm('Replace '+wallet.length+' current wallet records with '+incoming.length+' inspected backup records? Download a current backup first.'))return;
+ const before=wallet.map(x=>({...x}));
+ wallet=incoming;
+ if(!persist()){
+  wallet=before;
+  $('restorePreview').textContent='FAILED: Browser could not save restored wallet. Existing in-memory wallet retained; keep both backup files.';
+  resetRestore();render();return;
+ }
+ undoSnapshot=before;$('undo').disabled=false;
+ resetRestore();render();
+ $('restorePreview').textContent='Restored '+wallet.length+' inspected records. Use Undo last change to reverse this replacement.';
+});
+$('clear').addEventListener('click',()=>{if(!confirm('Delete all fictional test entries from this page?'))return;remember();wallet=[];const ok=persist();render();$('status').textContent='Test entries cleared. You can undo this change. Downloaded backups are unaffected.'});
+let photoUrl=null;let selectedFilename='';
+function parseDate(raw){
+ const value=String(raw||'').trim();let m=value.match(/\b(\d{4})[-/](\d{1,2})[-/](\d{1,2})\b/);
+ let y,mo,d;
+ if(m){y=+m[1];mo=+m[2];d=+m[3]}
+ else {m=value.match(/\b(\d{1,2})[-/](\d{1,2})[-/](\d{4})\b/);
+ if(m){d=+m[1];mo=+m[2];y=+m[3]}
+ else {m=value.match(/\b(\d{1,2})(?:st|nd|rd|th)?[ .-]+(Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)[ ,.-]+(\d{4})\b/i);
+ if(m){d=+m[1];mo=['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'].indexOf(m[2].slice(0,3).toLowerCase())+1;y=+m[3]}
+ else {m=value.match(/\b(Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)[ .-]+(\d{1,2})(?:st|nd|rd|th)?[,]?[ .-]+(\d{4})\b/i);
+ if(m){mo=['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'].indexOf(m[1].slice(0,3).toLowerCase())+1;d=+m[2];y=+m[3]}}}}
+ if(!y||y<1900||y>2200||!mo||!d)return '';
+ const dt=new Date(Date.UTC(y,mo-1,d));if(dt.getUTCFullYear()!==y||dt.getUTCMonth()!==mo-1||dt.getUTCDate()!==d)return '';
+ return String(y).padStart(4,'0')+'-'+String(mo).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+}
+function suggestFields(text){
+ const lines=String(text).slice(0,20000).split(/\r?\n/).map(v=>v.trim()).filter(Boolean);
+ const pick=(pattern)=>{for(let i=0;i<lines.length;i++){const m=lines[i].match(pattern);if(m){let v=(m[1]||'').trim();if(!v&&i+1<lines.length)v=lines[i+1];if(v)return v}}return ''};
+ let type=pick(/^(?:certificate\s*(?:type|name)|course(?:\s*name)?|training(?:\s*course)?|qualification)\s*[:#-]?\s*(.*)$/i);
+ let number=pick(/^(?:certificate\s*(?:number|no\.?|id|#)|credential\s*(?:number|id)|cert\s*(?:number|no\.?|#))\s*[:#-]?\s*(.*)$/i);
+ // Some cards print the ID on two lines, e.g. 59Z8O-511AU-YP1N7- / EG15F.
+ // Only join lines that look like an identifier, and never infer a number from a date.
+ const idPart=/^[A-Z0-9]{3,}(?:-[A-Z0-9]{2,})*-?$/i;
+ const idTail=/^[A-Z0-9]{3,}$/i;
+ if(!number){for(let i=0;i<lines.length;i++){
+   const first=lines[i].replace(/\s+/g,'').replace(/[–—]/g,'-');
+   const next=(lines[i+1]||'').replace(/\s+/g,'').replace(/[–—]/g,'-');
+   if(first.endsWith('-')&&idPart.test(first)&&idTail.test(next)&&/\d/.test(first)){
+     number=(first+next).slice(0,100);break;
+   }
+ }}
+ const issuer=pick(/^(?:provider|issuer|training\s*provider|issued\s*by)\s*[:#-]?\s*(.*)$/i);
+ const dateRaw=pick(/^(?:expiry(?:\s*date)?|expiration|expires|valid\s*until)\s*[:#-]?\s*(.*)$/i);
+ const issuedRaw=pick(/^(?:completed|completion\s*date|issued(?:\s*on|\s*date)?|issue\s*date|date\s*completed)\s*[:#-]?\s*(.*)$/i);
+ // Infer a standalone qualification title only from an unambiguous line, not from a person's name or issuer.
+ if(!type){const title=lines.find(line=>/^(?:WILDLIFE AWARENESS|H2S ALIVE|H₂S ALIVE|WHMIS|FALL PROTECTION|FIRST AID|CONFINED SPACE|GROUND DISTURBANCE|BEAR AWARENESS)(?:\b|\s|\()/i.test(line));if(title)type=title;}
+ const noExpiry=/^(?:N\s*\/?\s*A|NONE|NO\s+EXPIRY|DOES\s+NOT\s+EXPIRE|NON[- ]EXPIRING)$/i.test(dateRaw.trim());
+ const expiry=parseDate(dateRaw);const issued=parseDate(issuedRaw);
+ const found=[];if(type){$('cert').value=type.slice(0,80);found.push('type')};if(number){$('number').value=number.slice(0,100);found.push('number')};if(issuer){$('issuer').value=issuer.slice(0,80);found.push('provider')};if(noExpiry){$('noExpiry').checked=true;$('expiry').value='';found.push('no expiry')}else if(expiry){$('noExpiry').checked=false;$('expiry').value=expiry;found.push('expiry')};if(issued){$('issued').value=issued;found.push('completed date')};
+ return found;
+}
+function reviewQR(value){
+ value=String(value||'').trim();
+ if(!value)return 'No QR text available. Scan or paste decoded QR content first.';
+ let candidate='';let origin='';
+ try{
+  const url=new URL(value);
+  if(url.protocol==='https:' || url.protocol==='http:'){
+   const m=url.pathname.match(/\/c\/([^/?#]+)/i);
+   if(m){candidate=decodeURIComponent(m[1]).slice(0,100);origin='verification-link';}
+   else return 'QR link detected, but no recognizable certificate ID in its path. Link not opened; credential not verified.';
+  }
+ }catch(e){}
+ if(!candidate && /^[A-Za-z0-9][A-Za-z0-9_\-\s]{3,99}$/.test(value)){candidate=value;origin='plain-ID';}
+ if(candidate){
+  const entered=$('number').value.trim();
+  const prefix=origin==='verification-link'?'Verification link detected. ':'QR certificate ID detected. ';
+  if(!entered){$('number').value=candidate;return prefix+'Suggested certificate number: '+candidate+'. Compare with the printed certificate. Link not opened; credential not verified.';}
+  return prefix+(normalizeCertId(entered)===normalizeCertId(candidate)?'QR ID MATCHES entered certificate number. ':'QR ID DOES NOT MATCH entered certificate number. ' )+'QR ID: '+candidate+'; entered ID: '+entered+'. Review before saving. Nothing overwritten; credential not verified.';
+ }
+ const fields=suggestFields(value);
+ return fields.length?'QR text suggested '+fields.join(', ')+'. Check the certificate; credential not verified.':'QR content found but no recognized certificate fields. Nothing changed; credential not verified.';
+}
+$('useQRText').addEventListener('click',()=>{$('ocrStatus').textContent=reviewQR($('qrResult').value)});
+$('qrResult').addEventListener('change',()=>{if($('qrResult').value.trim())$('ocrStatus').textContent=reviewQR($('qrResult').value)});
+$('readText').addEventListener('click',()=>{const fields=suggestFields($('pastedText').value);$('ocrStatus').textContent=fields.length?'Suggested '+fields.join(', ')+'. Check every field before saving.':'No labeled fields recognized. Try lines such as Certificate Number: TEST-123. Nothing was changed.'});
+// Automatically interpret pasted or typed certificate text, without a separate button tap.
+// Suggestions remain editable and never save a certificate automatically.
+let lastInterpretedText='';
+function autoSuggestFromText(){
+ const text=$('pastedText').value;
+ if(text===lastInterpretedText)return;
+ lastInterpretedText=text;
+ if(!text.trim()){ $('ocrStatus').textContent='Paste certificate text to fill available fields automatically.';return; }
+ const fields=suggestFields(text);
+ $('ocrStatus').textContent=fields.length?'Automatically suggested: '+fields.join(', ')+'. Review and correct before saving.':'Text received; no recognizable certificate fields yet. You can edit the form manually.';
+}
+$('pastedText').addEventListener('input',autoSuggestFromText);
+$('pastedText').addEventListener('change',autoSuggestFromText);
+
+function showScannerCapabilities(){
+ const text=typeof window.TextDetector==='function';
+ const qr=typeof window.BarcodeDetector==='function';
+ const clip=!!(navigator.clipboard&&typeof navigator.clipboard.readText==='function');
+ $('scannerCapabilities').textContent='On this browser — Photo text recognition: '+(text?'available to try':'not available')+'; QR recognition: '+(qr?'available to try':'not available')+'; One-tap clipboard access: '+(clip?'available to request':'unavailable (paste manually)')+'. Availability does not guarantee successful detection.';
+}
+$('checkScanner').addEventListener('click',showScannerCapabilities);
+$('pasteClipboard').addEventListener('click',async()=>{
+ if(!navigator.clipboard||typeof navigator.clipboard.readText!=='function'){
+  $('clipboardStatus').textContent='This browser does not allow one-tap clipboard reading from this page. Long-press the text box and choose Paste instead.';
+  $('pastedText').focus();return;
+ }
+ try{
+  const copied=await navigator.clipboard.readText();
+  if(!copied.trim()){$('clipboardStatus').textContent='Clipboard is empty. Copy text from Samsung Gallery, Lens, a PDF or an email first.';return;}
+  if(copied.length>20000){$('clipboardStatus').textContent='Clipboard text is too long; only the first 20,000 characters were imported.';}
+  else $('clipboardStatus').textContent='Copied text imported. Recognized fields have been suggested below.';
+  $('pastedText').value=copied.slice(0,20000);
+  autoSuggestFromText();
+ }catch(err){$('clipboardStatus').textContent='Clipboard permission unavailable or denied. Long-press the text box and select Paste; field suggestions still run automatically.';$('pastedText').focus();}
+});
+
+
+$('scanPhoto').addEventListener('click',async()=>{
+ if(!photoUrl)return;
+ if(typeof window.TextDetector!=='function'){$('ocrStatus').textContent='This browser does not offer built-in photo text recognition. Paste text or enter details manually.';return}
+ $('scanPhoto').disabled=true;$('ocrStatus').textContent='Attempting on-device recognition...';
+ try{const img=await createImageBitmap($('photo').files[0]);try{const blocks=await new window.TextDetector().detect(img);const txt=blocks.map(b=>b.rawValue||'').join('\n');$('pastedText').value=txt.slice(0,20000);const fields=suggestFields(txt);$('ocrStatus').textContent=txt?'Photo text detected. Suggested '+(fields.join(', ')||'no labeled fields')+'. Review carefully.':'No readable text found in the photo.'}finally{img.close()}}
+ catch(e){$('ocrStatus').textContent='Photo recognition failed or is unavailable in this browser. Use manual entry.'}
+ finally{$('scanPhoto').disabled=false}
+});
+$('scanQR').addEventListener('click',async()=>{
+ const f=$('photo').files&&$('photo').files[0];if(!f||!f.type.startsWith('image/'))return;
+ if(typeof window.BarcodeDetector!=='function'){$('ocrStatus').textContent='QR scanning is not supported by this browser. You can still enter the certificate number manually.';return}
+ $('scanQR').disabled=true;$('ocrStatus').textContent='Checking the selected photo for QR codes...';
+ try{const detector=new window.BarcodeDetector({formats:['qr_code']});const bitmap=await createImageBitmap(f);let results;try{results=await detector.detect(bitmap)}finally{bitmap.close()}
+ if(!results.length){$('ocrStatus').textContent='No QR code detected. Try a sharper, closer photo.';return}
+ const values=results.map(r=>String(r.rawValue||'').slice(0,1000)).filter(Boolean);
+ $('qrResult').value=values.join('\n').slice(0,3000);
+ $('ocrStatus').textContent='QR code detected. '+reviewQR(values[0]);
+ }catch(err){$('ocrStatus').textContent='QR scan unavailable or failed on this browser. The original photo is unchanged.'}
+ finally{$('scanQR').disabled=false}
+});
+let photoSelectionGeneration=0;
+async function autoAnalyzeSelectedImage(file,generation){
+ const messages=[];
+ const active=()=>generation===photoSelectionGeneration && $('photo').files && $('photo').files[0]===file;
+ const textSupported=typeof window.TextDetector==='function';
+ const qrSupported=typeof window.BarcodeDetector==='function';
+ if(!textSupported&&!qrSupported){
+  if(active())$('ocrStatus').textContent='Automatic photo reading is not supported in this browser. Open the photo in Samsung Gallery or Google Lens, copy its text, and paste it above; the form will fill automatically.';
+  return;
+ }
+ if(active())$('ocrStatus').textContent='Analyzing photo locally using available browser detectors...';
+ if(textSupported){
+  try{
+   const bitmap=await createImageBitmap(file);
+   let blocks;
+   try{blocks=await new window.TextDetector().detect(bitmap)}finally{bitmap.close()}
+   if(!active())return;
+   const extracted=blocks.map(b=>String(b.rawValue||'')).filter(Boolean).join('\n').slice(0,20000);
+   if(extracted){$('pastedText').value=extracted;lastInterpretedText=extracted;const fields=suggestFields(extracted);messages.push('Photo text: '+(fields.length?'suggested '+fields.join(', '):'detected, but no fields recognized')+'.');}
+   else messages.push('Photo text: none detected.');
+  }catch(err){if(!active())return;messages.push('Photo text: detector failed.');}
+ }else messages.push('Photo text: unsupported by this browser.');
+ if(qrSupported){
+  try{
+   const bitmap=await createImageBitmap(file);
+   let results;
+   try{results=await new window.BarcodeDetector({formats:['qr_code']}).detect(bitmap)}finally{bitmap.close()}
+   if(!active())return;
+   const values=(results||[]).map(r=>String(r.rawValue||'').slice(0,1000)).filter(Boolean);
+   if(values.length){$('qrResult').value=values.join('\n').slice(0,3000);messages.push('QR: '+reviewQR(values[0]));}
+   else messages.push('QR: none detected.');
+  }catch(err){if(!active())return;messages.push('QR: detector failed.');}
+ }else messages.push('QR: unsupported by this browser.');
+ if(active())$('ocrStatus').textContent=messages.join(' ')+' Review all details before saving. If text is missing, copy it using Samsung Gallery or Google Lens.';
+}
+$('photo').addEventListener('change',async e=>{const generation=++photoSelectionGeneration;const f=e.target.files&&e.target.files[0];if(photoUrl){URL.revokeObjectURL(photoUrl);photoUrl=null}$('scanPhoto').disabled=true;$('scanQR').disabled=true;$('qrResult').value='';$('ocrStatus').textContent='';if(!f){$('preview').style.display='none';$('photoStatus').textContent='No file selected.';selectedFilename='';return}if(f.size>10000000){$('photoStatus').textContent='File too large (10 MB maximum).';e.target.value='';return}selectedFilename=f.name.slice(0,160);$('preview').style.display='none';$('preview').removeAttribute('src');if(f.type.startsWith('image/')){photoUrl=URL.createObjectURL(f);$('scanPhoto').disabled=false;$('scanQR').disabled=false;$('preview').src=photoUrl;$('preview').style.display='block';$('photoStatus').textContent='Image selected: '+selectedFilename+'. Automatically checking available local text and QR detectors.';void autoAnalyzeSelectedImage(f,generation)}else if(f.type==='text/plain'||f.name.toLowerCase().endsWith('.txt')){
+ const text=(await f.text()).slice(0,20000);
+ $('pastedText').value=text;
+ lastInterpretedText=text;
+ const fields=suggestFields(text);
+ $('photoStatus').textContent='Text file selected: '+selectedFilename+'. Suggested '+(fields.join(', ')||'no recognizable fields')+'. Check each field before saving.';
+ $('ocrStatus').textContent='Text-file fields reviewed automatically. '+(fields.join(', ')||'No labeled fields recognized.')+'; verify against the original.';
+ }else if(f.type==='application/pdf'||f.name.toLowerCase().endsWith('.pdf')){$('photoStatus').textContent='PDF selected: '+selectedFilename+'. Filename remembered, not the original file contents or a durable file link. This version cannot read PDF text; open the PDF separately and enter its details.'}else{$('photoStatus').textContent='Unsupported file format. Choose an image, PDF, or TXT.';selectedFilename='';e.target.value=''}});
+$('removePhoto').addEventListener('click',()=>{photoSelectionGeneration++;if(photoUrl){URL.revokeObjectURL(photoUrl);photoUrl=null}$('photo').value='';selectedFilename='';$('preview').removeAttribute('src');$('preview').style.display='none';$('photoStatus').textContent='Photo removed.';$('scanPhoto').disabled=true;$('scanQR').disabled=true;$('qrResult').value=''});
+testStorage();load();render();showScannerCapabilities();
+</script></body></html>
