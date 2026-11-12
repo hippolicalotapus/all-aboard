@@ -34,10 +34,13 @@ def main():
             "binary.dat": {"path": "binary.dat", "sha256": hashlib.sha256(payload).hexdigest(), "bytes": len(payload)},
             unusual_name: {"path": unusual_name, "sha256": hashlib.sha256(unusual_payload).hexdigest(), "bytes": len(unusual_payload)},
         }
+        # Untracked and uncommitted files must never enter a committed baseline.
+        (root / "untracked-secret.txt").write_text("not committed", encoding="utf-8")
         # Uncommitted changes must not alter the committed inventory.
         (root / "binary.dat").write_bytes(b"changed working tree")
         again = json.loads(run(sys.executable, str(TOOL), cwd=root))
         assert again["files"] == record["files"]
+        assert "untracked-secret.txt" not in {entry["path"] for entry in again["files"]}
     print("Recovery baseline smoke test passed")
 
 if __name__ == "__main__":
