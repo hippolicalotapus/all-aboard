@@ -1,0 +1,47 @@
+name: Offline regression verification
+
+on:
+  push:
+    branches: [development]
+    paths:
+      - 'source/**'
+      - 'tests/**'
+      - 'tools/**'
+      - '.github/workflows/offline-regression.yml'
+  pull_request:
+    paths:
+      - 'source/**'
+      - 'tests/**'
+      - 'tools/**'
+      - '.github/workflows/offline-regression.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run complete checked-in offline suite and build check
+        run: python3 tests/run_all.py
+      - name: Explicit inline JavaScript syntax check
+        run: python3 tests/check_inline_js.py source/all-aboard-personal.html
+      - name: Verify test build exists and contains app entrypoint
+        run: |
+          test -s dist/Employee_Onboarding_Test_v39.html
+          grep -q 'walletWorkspace' dist/Employee_Onboarding_Test_v39.html
+      - name: Summarize unverified release gates
+        if: always()
+        run: |
+          echo 'Browser E2E: NOT RUN in this workflow' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Real Android device: NOT RUN' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Production deployment: NOT PERFORMED' >> "$GITHUB_STEP_SUMMARY"
