@@ -6,6 +6,7 @@ on:
     paths:
       - 'tools/recovery_sha256_baseline.py'
       - 'tools/test_recovery_sha256_baseline.py'
+      - 'tests/run_all.py'
       - '.github/workflows/recovery-baseline.yml'
   pull_request:
     branches: [main]
