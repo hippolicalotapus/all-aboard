@@ -17,6 +17,7 @@ for name in REQUIRED:
 
 checks = [
     ["python3", "tests/check_v33.py"],
+    ["python3", "tools/test_recovery_sha256_baseline.py"],
     ["python3", "tests/check_inline_js.py", "source/all-aboard-personal.html"],
 ]
 # Syntax-check every standalone source module, including newly added ones.
