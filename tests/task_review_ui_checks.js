@@ -8,4 +8,5 @@ check('review panel has accessible task, status, note, and link controls',()=>{f
 check('review interface initializes after existing checklist rendering',()=>assert(html.indexOf('renderWorkflow();\n\n// Task review metadata')>html.indexOf('// END WORKFLOW STORE')));
 check('V39 checklist and wallet store identifiers remain present',()=>{assert(html.includes('onboarding-fictional-workflows-v1'));assert(html.includes('onboardflow-fictional-wallet-v2'))});
 check('review save explicitly disclaims employer approval',()=>assert(html.includes('This is not an employer approval.')));
+check('review summary refreshes after a successful save',()=>{assert(html.includes('id="taskReviewSummary"'));assert(html.includes('refreshReview()'));assert(html.includes('changes requested.'))});
 console.log(count+' task review UI checks passed');
