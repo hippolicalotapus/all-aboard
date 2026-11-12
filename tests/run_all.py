@@ -32,7 +32,7 @@ offline_js_checks = [
     if not path.name.startswith("browser_")
 ]
 checks.extend(["node", str(path.relative_to(ROOT))] for path in offline_js_checks)
-if not any("runtime_checks.js" in cmd for cmd in checks):
+if not any(any(part.endswith("/runtime_checks.js") or part == "runtime_checks.js" for part in cmd) for cmd in checks):
     print("FAIL: runtime_checks.js was not discovered", flush=True)
     sys.exit(1)
 
