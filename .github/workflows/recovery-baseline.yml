@@ -1,0 +1,54 @@
+name: Recovery baseline verification
+
+on:
+  push:
+    branches: [development]
+    paths:
+      - 'tools/recovery_sha256_baseline.py'
+      - 'tools/test_recovery_sha256_baseline.py'
+      - '.github/workflows/recovery-baseline.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-recovery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout complete history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Run checksum tool smoke test
+        run: python3 tools/test_recovery_sha256_baseline.py
+      - name: Generate actual source baseline
+        run: |
+          python3 tools/recovery_sha256_baseline.py --revision HEAD --output "$RUNNER_TEMP/recovery-baseline.json"
+          python3 - "$RUNNER_TEMP/recovery-baseline.json" <<'PY'
+          import json, subprocess, sys
+          with open(sys.argv[1], encoding="utf-8") as f:
+              record = json.load(f)
+          expected = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+          assert record["revision"] == expected
+          assert record["files"]
+          assert record["historical_v35_equivalence_verified"] is False
+          print("Verified", len(record["files"]), "tracked files at", expected)
+          PY
+      - name: Create and verify standalone rollback bundle
+        run: |
+          git bundle create "$RUNNER_TEMP/all-aboard-recovery.bundle" HEAD
+          git bundle verify "$RUNNER_TEMP/all-aboard-recovery.bundle"
+          git clone -q "$RUNNER_TEMP/all-aboard-recovery.bundle" "$RUNNER_TEMP/restore-check"
+          test "$(git -C "$RUNNER_TEMP/restore-check" rev-parse HEAD)" = "$(git rev-parse HEAD)"
+          python3 "$RUNNER_TEMP/restore-check/tools/test_recovery_sha256_baseline.py"
+      - name: Upload recovery artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: all-aboard-recovery-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/recovery-baseline.json
+            ${{ runner.temp }}/all-aboard-recovery.bundle
+          retention-days: 30
+          if-no-files-found: error
