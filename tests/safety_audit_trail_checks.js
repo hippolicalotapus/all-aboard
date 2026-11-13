@@ -1,0 +1,12 @@
+'use strict';
+const assert=require('node:assert/strict'),a=require('../source/safety-audit-trail');
+const base={companyId:'co',actorId:'safety',subjectId:'doc-1',revision:'1',at:'2026-11-13T12:00:00Z'};
+let log=a.append([],{...base,type:'draft-created'});
+log=a.append(log,{...base,type:'document-published'});
+assert.equal(log.length,2);assert.equal(log[1].sequence,2);
+assert(Object.isFrozen(log)&&Object.isFrozen(log[1]));
+assert.throws(()=>a.append(log,{...base,type:'document-published',companyId:'foreign'}),/Mixed company/);
+assert.throws(()=>a.append(log,{...base,type:'flha-reviewed',decision:'silently-approved'}),/decision/);
+assert.throws(()=>a.forViewer(log,{role:'employee',companyId:'co'}),/forbidden/);
+assert.equal(a.forViewer(log,{role:'safety-admin',companyId:'foreign'}).length,0);
+console.log('PASS: fictional audit events, validation, company scoping and viewer permissions');
