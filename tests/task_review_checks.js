@@ -17,4 +17,25 @@ let fail=false;const storage={getItem:k=>map.get(k)??null,setItem:(k,v)=>{if(fai
 const repo=reviews.connect(storage,model);
 check('review save/load and isolation from wallet and workflow',()=>{assert(repo.write(valid).ok);assert.deepEqual(repo.read(),valid);assert.equal(map.get('onboardflow-fictional-wallet-v2'),'WALLET');assert.equal(map.get('onboarding-fictional-workflows-v1'),'WORKFLOWS')});
 check('failed save preserves prior review',()=>{fail=true;const result=repo.write(reviews.empty());fail=false;assert.equal(result.ok,false);assert.deepEqual(repo.read(),valid)});
+
+check('silent dropped review write is detected without losing prior review',()=>{
+ const original=map.get(reviews.KEY);
+ const dropping={getItem:k=>map.get(k)??null,setItem:(k,v)=>{if(k!==reviews.KEY)map.set(k,v)},removeItem:k=>map.delete(k)};
+ const result=reviews.connect(dropping,model).write(reviews.empty());
+ assert.equal(result.ok,false);
+ assert.equal(result.recovered,true);
+ assert.equal(map.get(reviews.KEY),original);
+});
+check('invalid imported review leaves existing wallet, workflow and reviews intact',()=>{
+ const before=new Map(map);
+ assert.throws(()=>repo.write({...valid,records:[{...item,status:'approved'}]}));
+ assert.deepEqual(map,before);
+});
+check('review summary and attention do not change stored data',()=>{
+ const before=map.get(reviews.KEY);
+ const snapshot=repo.read();
+ reviews.summarize(snapshot,model);
+ reviews.reviewAttention(snapshot,model);
+ assert.equal(map.get(reviews.KEY),before);
+});
 console.log(n+' task review checks passed');
