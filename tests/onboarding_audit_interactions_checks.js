@@ -6,7 +6,7 @@ assert(source,'Inline pilot controller missing');
 function element(tag){return {tag,children:[],value:'employee',checked:false,disabled:false,textContent:'',append(...v){this.children.push(...v)},replaceChildren(...v){this.children=v},addEventListener(name,fn){this[name]=fn}}}
 const main=element('main'),role=element('select');
 const document={createElement:element,createTextNode:s=>({textContent:s}),getElementById:id=>id==='view'?main:role};
-vm.runInNewContext(source,{document,Set,Date,OnboardingWorkflow:require('../source/onboarding-workflow'),SafetyRevisionLifecycle:require('../source/safety-revision-lifecycle'),OnboardingCompletionRecords:require('../source/onboarding-completion-records'),SafetyAuditTrail:require('../source/safety-audit-trail')},{timeout:2000});
+vm.runInNewContext(source,{document,Set,Date,OnboardingWorkflow:require('../source/onboarding-workflow'),SafetyRevisionLifecycle:require('../source/safety-revision-lifecycle'),OnboardingCompletionRecords:require('../source/onboarding-completion-records'),SafetyAuditTrail:require('../source/safety-audit-trail'),SafetyAuditConsistency:require('../source/safety-audit-consistency')},{timeout:2000});
 function flat(n){return [n,...(n.children||[]).flatMap(flat)]}
 function button(label){const x=flat(main).find(n=>n.tag==='button'&&n.textContent===label);assert(x,'Missing button '+label);return x}
 function visible(s){return flat(main).some(n=>String(n.textContent).includes(s))}
