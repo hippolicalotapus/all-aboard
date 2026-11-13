@@ -701,7 +701,7 @@ $('workflowExport').addEventListener('click',()=>{if(workflowBlocked)return;cons
 function cancelWorkflowRestore(){workflowImportGeneration++;pendingWorkflowRestore=null;$('workflowRestore').disabled=true;$('workflowCancelRestore').disabled=true;$('workflowImport').value='';$('workflowRestorePreview').textContent='No checklist restore pending.'}
 $('workflowCancelRestore').addEventListener('click',cancelWorkflowRestore);
 // Changing checklist scope invalidates any inspected replacement preview.
-for(const id of ['workflowKind','workflowRole','workflowSite'])$(id).addEventListener('change',()=>{if(pendingWorkflowRestore)cancelWorkflowRestore()});
+for(const id of ['workflowKind','workflowRole','workflowSite'])$(id).addEventListener('change',()=>{if(pendingWorkflowRestore||$('workflowImport').files.length)cancelWorkflowRestore()});
 $('workflowImport').addEventListener('change',async event=>{
  const generation=++workflowImportGeneration;pendingWorkflowRestore=null;$('workflowRestore').disabled=true;$('workflowCancelRestore').disabled=false;
  const file=event.target.files[0];if(!file){cancelWorkflowRestore();return}
