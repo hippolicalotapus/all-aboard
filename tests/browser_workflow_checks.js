@@ -69,6 +69,13 @@ const server=http.createServer((req,res)=>{res.setHeader('Content-Type','text/ht
   await page.getByText(/Valid bundle: 1 workflow plan\(s\), 0 review record\(s\)/).waitFor();
   assert.match(await page.locator('#backupRecoveryImpact').innerText(),/workflow: 1 saved → 1 in backup/);
   assert.match(await page.locator('#backupRecoveryImpact').innerText(),/Preview only; no data changed/);
+  assert.equal(await page.locator('#backupRecoveryApply').isDisabled(),false);
+  await page.locator('#backupRecoveryStageClear').click();
+  assert.equal(await page.locator('#backupRecoveryApply').isDisabled(),true);
+  assert.match(await page.locator('#backupRecoveryStageStatus').innerText(),/No recovery staged/);
+  await selectBundle('v39-again.json',JSON.stringify({workflow:v39Backup}));
+  await page.getByText(/Valid bundle: 1 workflow plan/).waitFor();
+  assert.equal(await page.locator('#backupRecoveryApply').isDisabled(),false);
   await selectBundle('v40.json',JSON.stringify({review:v40Review}));
   await page.getByText(/Valid bundle: 0 workflow plan\(s\), 1 review record\(s\)/).waitFor();
   assert.match(await page.locator('#backupRecoveryImpact').innerText(),/review: 0 saved → 1 in backup/);
