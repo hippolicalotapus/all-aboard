@@ -7,7 +7,7 @@ function element(tag){return {tag,children:[],value:'employee',checked:false,dis
 const main=element('main'),role=element('select');
 const document={createElement:element,createTextNode:s=>({textContent:s}),getElementById:id=>id==='view'?main:role};
 vm.runInNewContext(source,{document,Set,Date,OnboardingWorkflow:require('../source/onboarding-workflow'),SafetyRevisionLifecycle:require('../source/safety-revision-lifecycle'),OnboardingCompletionRecords:require('../source/onboarding-completion-records'),SafetyAuditTrail:require('../source/safety-audit-trail')},{timeout:2000});
-function flat(n){return [n,...(n.children||[]).flatMap(flat)}
+function flat(n){return [n,...(n.children||[]).flatMap(flat)]}
 function button(label){const x=flat(main).find(n=>n.tag==='button'&&n.textContent===label);assert(x,'Missing button '+label);return x}
 function visible(s){return flat(main).some(n=>String(n.textContent).includes(s))}
 button('Read document').click();const checkbox=flat(main).find(n=>n.tag==='input');checkbox.checked=true;checkbox.change();button('Acknowledge this revision').click();
