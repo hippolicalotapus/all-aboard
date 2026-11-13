@@ -2,7 +2,7 @@
 const assert=require('node:assert/strict'),m=require('../source/safety-audit-consistency');
 const d={id:'d',companyId:'co',revision:'2',status:'approved'};
 const a={kind:'document-acknowledgement',companyId:'co',employeeId:'e',documentId:'d',revision:'2'};
-const event={sequence:1,type:'employee-acknowledged',companyId:'co',actorId:'e',subjectId:'d',revision:'2'};
+const event={sequence:1,type:'employee-acknowledged',companyId:'co',actorId:'e',subjectId:'d',revision:'2',at:'2026-11-13T12:00:00Z'};
 assert.equal(m.validate([event],[d],[a]).valid,true);
 assert.equal(m.validate([event],[d],[]).valid,false);
 assert(m.validate([event,{...event,sequence:2}],[d],[a]).problems.some(x=>x.includes('Duplicate')));
