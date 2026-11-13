@@ -5,7 +5,7 @@ const source=fs.readFileSync(path.join(__dirname,'../source/task-review.js'),'ut
 let count=0;const check=(name,fn)=>{fn();count++;console.log('PASS:',name)};
 check('embedded task-review module matches standalone source',()=>assert.equal(html.split('// BEGIN TASK REVIEW\n')[1].split('// END TASK REVIEW')[0],source));
 check('review panel has accessible task, status, note, and link controls',()=>{for(const id of ['taskReviewPanel','taskReviewTask','taskReviewStatus','taskReviewNote','taskReviewLink','taskReviewSave','taskReviewMessage'])assert.match(html,new RegExp('id="'+id+'"'))});
-check('review interface initializes after existing checklist rendering',()=>assert(html.indexOf('renderWorkflow();\n\n// Task review metadata')>html.indexOf('// END WORKFLOW STORE')));
+check('review interface initializes after existing checklist rendering',()=>{const checklistEnd=html.indexOf('// END WORKFLOW STORE'),reviewStart=html.indexOf('// Task review metadata');assert(checklistEnd>=0&&reviewStart>checklistEnd,'Review metadata must follow the checklist store');const renderBeforeReview=html.lastIndexOf('renderWorkflow();',reviewStart);assert(renderBeforeReview>checklistEnd,'Checklist must be rendered before review initialization')});
 check('V39 checklist and wallet store identifiers remain present',()=>{assert(html.includes('onboarding-fictional-workflows-v1'));assert(html.includes('onboardflow-fictional-wallet-v2'))});
 check('review save explicitly disclaims employer approval',()=>assert(html.includes('This is not an employer approval.')));
 check('review summary refreshes after a successful save',()=>{assert(html.includes('id="taskReviewSummary"'));assert(html.includes('refreshReview()'));assert(html.includes('changes requested.'))});
