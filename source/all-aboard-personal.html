@@ -875,7 +875,7 @@ $('backupRecoveryApply').addEventListener('click',()=>{
  const stage=stagedBackupRecovery;
  clearStagedBackupRecovery();
  const outcome=BackupRecoveryTransaction.apply(stage,localStorage,WorkflowStore,TaskReview,WorkflowModel,true);
- $('backupRecoveryApplyStatus').textContent=outcome.ok?'Recovery saved and verified. Reload to review restored records.':outcome.rollbackVerified?'Recovery failed; previous data restored and verified.':'Recovery failed; rollback not verified. Stop and inspect browser storage before retrying.';
+ $('backupRecoveryApplyStatus').textContent=outcome.ok?'Recovery saved and verified. Reload to review restored records.':outcome.rollbackVerified?'Recovery failed; previous data restored and verified.':outcome.writes?'Recovery failed; rollback not verified. Stop and inspect browser storage before retrying.':'Recovery blocked before any changes: '+outcome.errors.join('; ');
  if(outcome.ok){workflowBlocked=false;workflowRepo=WorkflowStore.connect(localStorage,WorkflowModel);workflowState=workflowRepo.read();renderWorkflow();}
 });
 
