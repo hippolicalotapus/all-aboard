@@ -7,8 +7,8 @@
  function action(state,actor,command){
   check(state);if(!command||!['exclude','correct','approve'].includes(command.type))throw Error('Unsupported action');
   authorized(state,actor,['foreman']);
-  if(state.report.status!=='draft')throw Error('Approved report is immutable; start a new correction revision');
   if(state.events.some(e=>e.actionId===command.actionId))return state; // idempotent replay
+  if(state.report.status!=='draft')throw Error('Approved report is immutable; start a new correction revision');
   if(typeof command.actionId!=='string'||!command.actionId.trim())throw Error('Action ID required');
   let entries=state.entries;
   if(command.type!=='approve'){
