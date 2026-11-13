@@ -4,10 +4,18 @@
  function key(e){return [e.companyId,e.type,e.actorId,e.subjectId,e.revision].join('|');}
  function validate(events,documents,acknowledgements,history=[]){
   if(!Array.isArray(events)||!Array.isArray(documents)||!Array.isArray(acknowledgements)||!Array.isArray(history))throw new Error('Invalid consistency inputs');
-  const problems=[],seen=new Set();
+  const problems=[],seen=new Set(),reviewed=new Set();
   events.forEach((e,i)=>{
    if(e.sequence!==i+1)problems.push('Invalid event sequence at '+(i+1));
    if(!e.companyId||!e.actorId||!e.subjectId||!e.revision)problems.push('Incomplete event at '+(i+1));
+   if(!Number.isFinite(Date.parse(e.at))||typeof e.at!=='string'||!/^\\d{4}-\\d\\d-\\d\\dT/.test(e.at))problems.push('Invalid event time at '+(i+1));
+   if(i>0&&e.companyId!==events[0].companyId)problems.push('Mixed company ledger at '+(i+1));
+   if(e.type==='flha-reviewed'){
+    const reviewKey=[e.companyId,e.subjectId,e.revision].join('|');
+    if(reviewed.has(reviewKey))problems.push('Duplicate FLHA review '+reviewKey);
+    reviewed.add(reviewKey);
+    if(!['approved','returned'].includes(e.decision))problems.push('Invalid FLHA decision '+reviewKey);
+   }
    if(e.type==='employee-acknowledged'){
     const id=key(e);
     if(seen.has(id))problems.push('Duplicate acknowledgement event '+id);seen.add(id);
