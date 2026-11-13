@@ -1,0 +1,14 @@
+'use strict';
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const html=fs.readFileSync(require('node:path').join(__dirname,'../source/all-aboard-personal.html'),'utf8');
+const source=fs.readFileSync(require('node:path').join(__dirname,'../source/backup-preflight.js'),'utf8');
+assert.equal(html.split('// BEGIN BACKUP PREFLIGHT\n')[1].split('// END BACKUP PREFLIGHT')[0],source,'embedded preflight must match standalone module');
+for(const id of ['backupPreflightPanel','backupPreflightFile','backupPreflightResult'])assert(html.includes('id="'+id+'"'),id);
+assert(html.includes("BackupPreflight.inspect(raw,WorkflowStore,TaskReview,WorkflowModel)"));
+assert(html.includes('Inspection only; nothing was imported or overwritten.'));
+assert(html.includes('Nothing was imported or overwritten.'));
+assert(html.includes('backupPreflightGeneration'),'stale async reads must be ignored');
+assert(html.includes('id="workflowRestore"'),'existing V39 restore remains available');
+assert(html.includes('id="taskReviewSave"'),'V40 review controls remain available');
+console.log('V40 UI backup inspection and V39 isolation regression checks passed');
