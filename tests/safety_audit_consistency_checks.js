@@ -13,4 +13,5 @@ assert.equal(m.canReview(f,boss,[]),true);
 assert.equal(m.canReview(f,boss,[{companyId:'co',flhaId:'f',revision:'2'}]),false);
 assert.equal(m.canReview(f,{...boss,companyId:'other'},[]),false);
 assert.equal(m.canReview({...f,revision:'3'},boss,[{companyId:'co',flhaId:'f',revision:'2'}]),true);
+assert.equal(m.validate([{...event,type:'document-published'}],[{...d,revision:'3'}],[],[d]).valid,true,'Historical approved revision remains valid');
 console.log('PASS: audit consistency, duplicate acknowledgements and FLHA review guards');
