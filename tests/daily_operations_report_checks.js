@@ -12,3 +12,11 @@ assert.throws(()=>m.approve(clean,{role:'foreman',companyId:'b',projectId:'p',id
 assert.throws(()=>m.approve(clean,{role:'foreman',companyId:'a',projectId:'other',id:'f'}),/foreman/);
 assert.equal(m.build([{...base,status:'draft'}],ctx).entries.length,0);
 console.log('PASS: fictional enter-once daily reports, exceptions, FLHA-plan exclusion and foreman approval');
+
+const duplicateSource=m.build([base,{...base,id:'hours-2',quantity:9}],ctx);
+assert.equal(duplicateSource.entries.length,1);
+assert.deepEqual(duplicateSource.exceptions,[{id:'hours-2',reason:'duplicate-source'}]);
+assert.throws(()=>m.approve(duplicateSource,{role:'foreman',companyId:'a',projectId:'p',id:'f'}),/Unresolved/);
+const distinctKind=m.build([base,{...base,id:'production-1',kind:'production',unit:'units'}],ctx);
+assert.equal(distinctKind.entries.length,2);
+console.log('PASS: duplicate source references cannot double count actuals or pass approval');
