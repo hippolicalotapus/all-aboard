@@ -22,7 +22,7 @@ assert(html.includes('BackupRecoveryPlan.plan(raw,current,WorkflowStore,TaskRevi
 assert(html.includes('Preview only; no data changed.'),'recovery preview must explicitly be non-mutating');
 assert(html.includes('Saved data could not be read safely; impact unavailable.'),'unreadable storage must not imply safe recovery');
 const stageSource=fs.readFileSync(require('node:path').join(__dirname,'../source/backup-recovery-stage.js'),'utf8');
-assert.equal(html.split('// BEGIN BACKUP RECOVERY STAGE\\n')[1].split('// END BACKUP RECOVERY STAGE')[0],stageSource,'embedded staging module must match standalone source');
+assert.equal(html.split('// BEGIN BACKUP RECOVERY STAGE\n')[1].split('// END BACKUP RECOVERY STAGE')[0],stageSource,'embedded staging module must match standalone source');
 assert(html.includes('id="backupRecoveryStageStatus"'),'stage status is visible');
 assert(html.includes('id="backupRecoveryStageClear"'),'discard control exists');
 assert(html.includes('BackupRecoveryStage.stage(raw,current,WorkflowStore,TaskReview,WorkflowModel)'),'staging uses validated recovery');
