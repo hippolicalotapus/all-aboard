@@ -1,0 +1,11 @@
+'use strict';
+const assert=require('node:assert/strict'),model=require('../source/onboarding-completion-records');
+const employee={id:'e',companyId:'one',role:'employee'},admin={id:'a',companyId:'one',role:'safety-admin'};
+const docs=[{id:'d',companyId:'one',revision:'2',roles:['employee'],status:'approved'},{id:'draft',companyId:'one',revision:'3',roles:['employee'],status:'draft'}];
+const acks=[{kind:'document-acknowledgement',companyId:'one',employeeId:'e',documentId:'d',revision:'1',acknowledgedAt:'2026-11-13T00:00:00Z'}];
+let p=model.completion(employee,employee,docs,acks);assert.equal(p.total,1);assert.equal(p.completed,0);
+p=model.completion(admin,employee,docs,[...acks,{...acks[0],revision:'2'}]);assert.equal(p.completed,1);assert.equal(p.records[0].revision,'2');
+assert.throws(()=>model.completion({...employee,id:'other'},employee,docs,acks),/own/);
+assert.throws(()=>model.completion({...admin,companyId:'two'},employee,docs,acks),/Company/);
+assert.throws(()=>model.completion({...admin,role:'foreman'},employee,docs,acks),/Unauthorized/);
+console.log('PASS: role-scoped completion records, revision renewal and tenant isolation');
