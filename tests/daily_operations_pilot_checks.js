@@ -12,6 +12,7 @@ function press(t){const b=all(main).find(x=>x.tag==='button'&&x.textContent===t)
 assert(has('Items requiring attention'));assert(has('not-verified-actual'));
 press('Approve daily report');assert(has('Unresolved exceptions'));
 press('Dismiss fictional plan-1');press('Approve daily report');assert(has('foreman-approved'));assert(has('Fictional report history'));assert(has('exclude by fictional-foreman'));assert(has('approve by fictional-foreman'));
+role.value='foreman';role.change();press('Reopen approved report');assert(has('Status: draft'));assert(has('reopen by fictional-foreman'));press('Approve daily report');assert(has('foreman-approved'));
 role.value='superintendent';role.change();assert(has('foreman-approved'));assert(has('Fictional report history'));assert(!all(main).some(x=>x.tag==='button'));
 role.value='accounting';role.change();assert(has('120 metres'));assert(!all(main).some(x=>x.tag==='button'));
 role.value='employee';role.change();assert(has('Access restricted'));assert(!has('120 metres'));
