@@ -13,3 +13,10 @@ test("V40 presentation does not pretend a review is employer approval",()=>{
  assert.ok(html.includes("Reviewed (not employer approval)"));
  assert.ok(html.includes("Not requested"));
 });
+
+test("backup restore remains explicitly staged and guarded by confirmation",()=>{
+ assert.ok(html.includes("BackupRecoveryTransaction.apply"));
+ assert.ok(html.includes("stagedBackupRecovery"));
+ assert.ok(html.includes("window.confirm("));
+ assert.ok(html.includes("rollbackVerified"));
+});
