@@ -1,13 +1,14 @@
 'use strict';
 // Local fictional test harness only. Do not deploy or use with real records.
 const http=require('node:http');
-function createServer(repository,actors,sessionStore){
+function createServer(repository,actors,sessionStore,memberships){
  if(!repository||!actors)throw Error('Repository and server-owned actors required');
  return http.createServer((req,res)=>{
   const send=(status,body)=>{res.writeHead(status,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(JSON.stringify(body));};
   if(req.socket.remoteAddress!=='127.0.0.1'&&req.socket.remoteAddress!=='::1'&&req.socket.remoteAddress!=='::ffff:127.0.0.1')return send(403,{error:'Loopback only'});
   const bearer=/^Bearer ([A-Za-z0-9_-]{32,256})$/.exec(req.headers.authorization||'');
   const actor=sessionStore?(bearer?sessionStore.resolve(bearer[1]):null):actors.get(req.headers['x-test-session']);if(!actor)return send(401,{error:'Authenticated test session required'});
+  if(memberships&&!memberships.resolve(actor.id,actor.companyId,actor.projectId||actor.projectIds?.[0],actor.role))return send(403,{error:'Project membership required'});
   if(sessionStore&&req.method==='POST'&&req.headers.origin&&req.headers.origin!=='http://'+req.headers.host)return send(403,{error:'Cross-origin write denied'});
   if(req.url!=='/daily-report'||!['GET','POST'].includes(req.method))return send(404,{error:'Not found'});
   let body='';req.on('data',c=>{body+=c;if(body.length>16384)req.destroy();});req.on('end',()=>{
