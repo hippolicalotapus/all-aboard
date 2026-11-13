@@ -753,6 +753,7 @@ $('backupPreflightFile').addEventListener('change',async event=>{
  const generation=++backupPreflightGeneration;
  const file=event.target.files[0];
  if(!file){$('backupPreflightResult').textContent='No bundle inspected.';return}
+ $('backupPreflightResult').textContent='Inspecting selected backup; no data will be changed.';
  try{
   if(file.size>65536)throw Error('File exceeds 64 KB');
   const raw=JSON.parse(await file.text());
