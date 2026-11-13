@@ -8,7 +8,7 @@ const {spawn}=require('node:child_process');
 const {mkdtempSync,rmSync}=require('node:fs');
 const os=require('node:os');
 const root=path.resolve(__dirname,'..');
-const allowed=new Set(['pilot/workforce-onboarding.html','source/safety-document-model.js','source/onboarding-workflow.js','source/safety-revision-lifecycle.js','source/onboarding-completion-records.js','source/safety-audit-trail.js','source/safety-audit-consistency.js']);
+const allowed=new Set(['pilot/workforce-onboarding.html','source/safety-document-model.js','source/onboarding-workflow.js','source/safety-revision-lifecycle.js','source/onboarding-completion-records.js','source/safety-audit-trail.js','source/safety-audit-consistency.js','pilot/daily-operations.html','source/daily-operations-report.js','source/daily-operations-pilot.js','source/daily-report-lifecycle.js']);
 const delay=ms=>new Promise(r=>setTimeout(r,ms));
 async function run(){
  const server=http.createServer((req,res)=>{const rel=decodeURIComponent((req.url||'/').split('?')[0]).replace(/^\//,'');if(!allowed.has(rel)){res.writeHead(404);res.end('Not found');return;}res.setHeader('Content-Type',rel.endsWith('.html')?'text/html; charset=utf-8':'text/javascript; charset=utf-8');res.end(fs.readFileSync(path.join(root,rel)));});
@@ -40,7 +40,14 @@ async function run(){
   await act('(()=>{[...document.querySelectorAll("button")].find(x=>x.textContent==="Create revised draft").click();[...document.querySelectorAll("button")].find(x=>x.textContent==="Approve and publish draft").click();return document.body.textContent.includes("orientation-demo revision 2: pending")&&document.body.textContent.includes("Audit consistency: passed")})()');
   await act('(()=>{const s=document.querySelector("#role");s.value="employee";s.dispatchEvent(new Event("change"));return !document.body.textContent.includes("Fictional audit events")})()');
   await act('(()=>{const s=document.querySelector("#role");s.value="foreman";s.dispatchEvent(new Event("change"));[...document.querySelectorAll("button")].find(x=>x.textContent==="Return for correction").click();return document.body.textContent.includes("returned on revision 1")})()');
-  socket.close();console.log('PASS: real Chromium CDP onboarding, revision renewal, audit visibility and FLHA review');
+  await command('Page.navigate',{url:'http://127.0.0.1:'+port+'/pilot/daily-operations.html'});
+  let daily=false;for(let i=0;i<80;i++){daily=await evaluate('typeof DailyReportLifecycle!=="undefined" && document.body.textContent.includes("Items requiring attention")');if(daily)break;await delay(100);}assert(daily,'Daily operations pilot failed to load');
+  await act('(()=>{const b=[...document.querySelectorAll("button")].find(x=>x.textContent==="Dismiss fictional plan-1");if(!b)return false;b.click();return document.body.textContent.includes("No unresolved exceptions")})()');
+  await act('(()=>{const b=[...document.querySelectorAll("button")].find(x=>x.textContent==="Approve daily report");if(!b)return false;b.click();return document.body.textContent.includes("foreman-approved")})()');
+  await act('(()=>{const b=[...document.querySelectorAll("button")].find(x=>x.textContent==="Reopen approved report");if(!b)return false;b.click();return document.body.textContent.includes("Status: draft")})()');
+  await act('(()=>{const s=document.querySelector("#role");s.value="accounting";s.dispatchEvent(new Event("change"));return document.body.textContent.includes("120 metres")&&!document.body.textContent.includes("Approve daily report")})()');
+  await act('(()=>{const s=document.querySelector("#role");s.value="employee";s.dispatchEvent(new Event("change"));return document.body.textContent.includes("Access restricted")&&!document.body.textContent.includes("120 metres")})()');
+  socket.close();console.log('PASS: real Chromium CDP onboarding and daily operations role/approval workflows');
  }finally{browser.kill('SIGKILL');await new Promise(resolve=>server.close(resolve));rmSync(dir,{recursive:true,force:true});}
 }
 run().catch(e=>{console.error(e);process.exitCode=1;});
