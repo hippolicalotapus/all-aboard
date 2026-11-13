@@ -3,9 +3,10 @@
 const BackupPreflight=(()=>{
  function inspect(raw,workflowStore,reviewStore,model){
   const result={workflow:{present:false,valid:false,plans:0},review:{present:false,valid:false,records:0},safeToImport:false,errors:[],writes:false};
+  if(!raw||typeof raw!=='object'||Array.isArray(raw)){result.errors.push('bundle: expected JSON object');return result;}
   for(const [name,store,field,count] of [['workflow',workflowStore,'plans','plans'],['review',reviewStore,'records','records']]){
-   const value=raw&&Object.hasOwn(raw,name)?raw[name]:undefined;
-   if(value===undefined||value===null)continue;
+   if(!Object.hasOwn(raw,name))continue;
+   const value=raw[name];
    result[name].present=true;
    try{
     const validated=store.validate(value,model);
