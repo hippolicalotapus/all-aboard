@@ -15,4 +15,10 @@ assert(html.includes("if(pendingWorkflowRestore||$('workflowImport').files.lengt
 assert(html.includes('if(generation!==workflowImportGeneration)return;const next=WorkflowStore.validate'),'late V39 file reads must not replace a cancelled preview');
 assert(html.includes('if(generation!==backupPreflightGeneration)return;'),'late V40 inspection must not overwrite newer results');
 assert(html.includes("$('backupPreflightResult').textContent='Inspecting selected backup; no data will be changed.'"),'new V40 selection must clear stale prior inspection result');
+const recovery=fs.readFileSync(require('node:path').join(__dirname,'../source/backup-recovery-plan.js'),'utf8');
+assert.equal(html.split('// BEGIN BACKUP RECOVERY PLAN\\n')[1].split('// END BACKUP RECOVERY PLAN')[0],recovery,'embedded recovery planner must match standalone module');
+assert(html.includes('id="backupRecoveryImpact"'),'recovery impact is visible');
+assert(html.includes('BackupRecoveryPlan.plan(raw,current,WorkflowStore,TaskReview,WorkflowModel)'),'impact uses validated planner');
+assert(html.includes('Preview only; no data changed.'),'recovery preview must explicitly be non-mutating');
+assert(html.includes('Saved data could not be read safely; impact unavailable.'),'unreadable storage must not imply safe recovery');
 console.log('V40 UI backup inspection and V39 isolation regression checks passed');
