@@ -18,7 +18,7 @@ function createServer(repository,actors,sessionStore,memberships){
     const context={companyId:actor.companyId,projectId:actor.projectId||actor.projectIds?.[0],date:'2026-11-13'};
     const result=req.method==='POST'?repository.act('pilot',context,actor,input.command):repository.read('pilot',context,actor);
     send(200,result);
-   }catch(e){send(/access denied|Access denied|revision conflict|Concurrent/.test(e.message)?409:400,{error:e.message});}
+   }catch(e){send(/Membership access denied|Project membership required/.test(e.message)?403:/revision conflict|Concurrent|Coordinated storage busy/.test(e.message)?409:/access denied|Access denied/.test(e.message)?403:400,{error:e.message});}
   });
  });
 }
