@@ -10,13 +10,13 @@ vm.runInNewContext(source,{document,Set,Date,OnboardingWorkflow:require('../sour
 function flat(n){return [n,...(n.children||[]).flatMap(flat)]}
 function button(label){const x=flat(main).find(n=>n.tag==='button'&&n.textContent===label);assert(x,'Missing button '+label);return x}
 function visible(s){return flat(main).some(n=>String(n.textContent).includes(s))}
-button('Read document').click();const checkbox=flat(main).find(n=>n.tag==='input');checkbox.checked=true;checkbox.change();button('Acknowledge this revision').click();
+button('Read document').click();const checkbox=flat(main).find(n=>n.tag==='input');checkbox.checked=true;checkbox.change();const oldAck=button('Acknowledge this revision');oldAck.click();oldAck.click();
 role.value='safety-admin';role.change();
-assert(visible('employee-acknowledged — swp-1 revision 1'));
+assert(visible('employee-acknowledged — swp-1 revision 1'));assert.equal(flat(main).filter(n=>String(n.textContent).includes('employee-acknowledged — swp-1 revision 1')).length,1,'Duplicate acknowledgement blocked');
 button('Create new draft').click();assert(visible('draft-created — orientation-demo revision 1'));
 button('Approve and publish draft').click();assert(visible('document-published — orientation-demo revision 1'));
 button('Create revised draft').click();assert(visible('revision-created — orientation-demo revision 2'));
 button('Approve and publish draft').click();assert(visible('document-published — orientation-demo revision 2'));
-role.value='foreman';role.change();button('Return for correction').click();assert(visible('returned on revision 1'));
-role.value='safety-admin';role.change();assert(visible('flha-reviewed — flha-1 revision 1 (returned)'));
+role.value='foreman';role.change();const oldReturn=button('Return for correction');oldReturn.click();oldReturn.click();assert(visible('returned on revision 1'));
+role.value='safety-admin';role.change();assert(visible('flha-reviewed — flha-1 revision 1 (returned)'));assert.equal(flat(main).filter(n=>String(n.textContent).includes('flha-reviewed — flha-1 revision 1 (returned)')).length,1,'Duplicate FLHA review blocked');
 console.log('PASS: fictional audit event integration through simulated employee, admin and foreman interactions');
