@@ -95,6 +95,27 @@ const server=http.createServer((req,res)=>{res.setHeader('Content-Type','text/ht
    review:localStorage.getItem('onboarding-fictional-task-reviews-v1')
   })),preflightBefore);
   console.log('PASS: V40 inspector accepts V39/V40/combined backups, rejects malformed data, and never writes storage');
+  // Confirmed V40 review-only recovery must not modify V39 workflows or wallet.
+  await selectBundle('confirmed-review.json',JSON.stringify({review:v40Review}));
+  await page.getByText(/Valid bundle: 0 workflow plan\(s\), 1 review record\(s\)/).waitFor();
+  assert.equal(await page.locator('#backupRecoveryApply').isDisabled(),false);
+  await page.locator('#backupRecoveryApply').click();
+  await page.getByText(/Recovery saved and verified/).waitFor();
+  assert.equal(await page.locator('#backupRecoveryApply').isDisabled(),true);
+  const afterRecovery=await page.evaluate(()=>({
+   workflow:localStorage.getItem('onboarding-fictional-workflows-v1'),
+   wallet:localStorage.getItem('onboardflow-fictional-wallet-v2'),
+   review:localStorage.getItem('onboarding-fictional-task-reviews-v1')
+  }));
+  assert.equal(afterRecovery.workflow,preflightBefore.workflow,'V39 workflow storage must be isolated');
+  assert.equal(afterRecovery.wallet,preflightBefore.wallet,'wallet must be isolated');
+  assert.equal(JSON.parse(afterRecovery.review).records.length,1,'review recovery should persist');
+  await page.evaluate(before=>{
+   if(before.review===null)localStorage.removeItem('onboarding-fictional-task-reviews-v1');
+   else localStorage.setItem('onboarding-fictional-task-reviews-v1',before.review);
+  },preflightBefore);
+  console.log('PASS: confirmed V40 review recovery preserves V39 workflows and wallet');
+
   // Interrupted restore: switching scope or cancelling must revoke pending confirmation.
   await page.locator('#workflowImport').setInputFiles({name:'valid-again.json',mimeType:'application/json',buffer:Buffer.from(raw)});
   await page.getByText(/Inspected 1 checklist/).waitFor();
