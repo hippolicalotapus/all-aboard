@@ -10,7 +10,7 @@ const server=http.createServer((req,res)=>{res.setHeader('Content-Type','text/ht
   const executablePath=process.env.WORKFLOW_CHROMIUM_PATH || (fs.existsSync('/usr/bin/chromium')?'/usr/bin/chromium':undefined);
   browser=await chromium.launch({headless:true,executablePath,args:['--no-sandbox']});
   const page=await browser.newPage({viewport:{width:390,height:844}}),errors=[];
-  page.on('pageerror',error=>errors.push(error.message));page.on('dialog',dialog=>dialog.accept());
+  page.on('pageerror',error=>errors.push(error.message));let acceptDialogs=true;page.on('dialog',dialog=>acceptDialogs?dialog.accept():dialog.dismiss());
   await page.goto('http://127.0.0.1:'+server.address().port);await page.locator('#openCompany').click();
   // V39 browser smoke: deadline filters and attention refresh must remain usable.
   await page.locator('#workflowTaskFilter').selectOption('overdue');
@@ -99,6 +99,11 @@ const server=http.createServer((req,res)=>{res.setHeader('Content-Type','text/ht
   await selectBundle('confirmed-review.json',JSON.stringify({review:v40Review}));
   await page.getByText(/Valid bundle: 0 workflow plan\(s\), 1 review record\(s\)/).waitFor();
   assert.equal(await page.locator('#backupRecoveryApply').isDisabled(),false);
+  acceptDialogs=false;
+  await page.locator('#backupRecoveryApply').click();
+  assert.equal(await page.locator('#backupRecoveryApply').isDisabled(),false,'cancelled confirmation keeps stage available');
+  assert.equal(await page.evaluate(()=>localStorage.getItem('onboarding-fictional-task-reviews-v1')),preflightBefore.review);
+  acceptDialogs=true;
   await page.locator('#backupRecoveryApply').click();
   await page.getByText(/Recovery saved and verified/).waitFor();
   assert.equal(await page.locator('#backupRecoveryApply').isDisabled(),true);
