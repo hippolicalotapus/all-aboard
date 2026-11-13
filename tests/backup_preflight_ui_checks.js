@@ -14,4 +14,5 @@ assert(html.includes('id="taskReviewSave"'),'V40 review controls remain availabl
 assert(html.includes("if(pendingWorkflowRestore||$('workflowImport').files.length)cancelWorkflowRestore()"),'scope changes invalidate in-flight V39 file reads');
 assert(html.includes('if(generation!==workflowImportGeneration)return;const next=WorkflowStore.validate'),'late V39 file reads must not replace a cancelled preview');
 assert(html.includes('if(generation!==backupPreflightGeneration)return;'),'late V40 inspection must not overwrite newer results');
+assert(html.includes("$('backupPreflightResult').textContent='Inspecting selected backup; no data will be changed.'"),'new V40 selection must clear stale prior inspection result');
 console.log('V40 UI backup inspection and V39 isolation regression checks passed');
