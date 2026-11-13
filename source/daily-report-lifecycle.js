@@ -7,9 +7,12 @@
  function action(state,actor,command){
   check(state);if(!command||!['exclude','correct','approve'].includes(command.type))throw Error('Unsupported action');
   authorized(state,actor,['foreman']);
-  if(state.events.some(e=>e.actionId===command.actionId))return state; // idempotent replay
-  if(state.report.status!=='draft')throw Error('Approved report is immutable; start a new correction revision');
   if(typeof command.actionId!=='string'||!command.actionId.trim())throw Error('Action ID required');
+  const prior=state.events.find(e=>e.actionId===command.actionId);
+  if(prior){if(prior.type!==command.type||prior.recordId!==(command.recordId||null)||prior.newQuantity!==(command.type==='correct'?command.quantity:null)||prior.reason!==(command.reason||null))throw Error('Action ID conflict');return state;}
+  if(!Number.isSafeInteger(command.expectedRevision)||command.expectedRevision!==state.revision)throw Error('Report revision conflict');
+  if(state.report.status!=='draft')throw Error('Approved report is immutable; start a new correction revision');
+  if(command.type!=='approve'&&(typeof command.reason!=='string'||command.reason.trim().length<5))throw Error('Correction or exclusion reason required');
   let entries=state.entries;
   if(command.type!=='approve'){
    if(typeof command.recordId!=='string'||!command.recordId.trim())throw Error('Record ID required');
@@ -23,8 +26,8 @@
    }
   }
   const report=command.type==='approve'?reports.approve(state.report,actor):reports.build(entries,state.context);
-  const event=Object.freeze({sequence:state.events.length+1,actionId:command.actionId,type:command.type,actorId:actor.id,companyId:state.context.companyId,projectId:state.context.projectId,reportRevision:state.revision,recordId:command.recordId||null,oldQuantity:command.type==='correct'?state.entries.find(e=>e.id===command.recordId).quantity:null,newQuantity:command.type==='correct'?command.quantity:null});
-  return Object.freeze({context:state.context,entries:Object.freeze([...entries]),report,events:Object.freeze([...state.events,event]),revision:state.revision});
+  const event=Object.freeze({sequence:state.events.length+1,actionId:command.actionId,type:command.type,actorId:actor.id,companyId:state.context.companyId,projectId:state.context.projectId,reportRevision:state.revision,recordId:command.recordId||null,reason:command.reason||null,oldQuantity:command.type==='correct'?state.entries.find(e=>e.id===command.recordId).quantity:null,newQuantity:command.type==='correct'?command.quantity:null});
+  return Object.freeze({context:state.context,entries:Object.freeze([...entries]),report,events:Object.freeze([...state.events,event]),revision:state.revision+1});
  }
  function view(state,actor){check(state);if(!actor||actor.companyId!==state.context.companyId)throw Error('Company access denied');
   const permitted=actor.role==='foreman'&&actor.projectId===state.context.projectId||['superintendent','accounting','payroll','management'].includes(actor.role)&&Array.isArray(actor.projectIds)&&actor.projectIds.includes(state.context.projectId);
