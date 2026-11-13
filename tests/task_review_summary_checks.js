@@ -6,6 +6,7 @@ const blank=review.empty();
 const summary=review.summarize(blank,model);
 assert.equal(summary.total,0);
 assert.equal(summary.evidenceLinks,0);
+assert.equal(summary.missingEvidence,0);
 assert.equal(summary.employerApproval,false);
 assert.deepEqual(summary.byStatus,{pending:0,reviewed:0,'changes-requested':0});
 assert.deepEqual(blank,review.empty());
