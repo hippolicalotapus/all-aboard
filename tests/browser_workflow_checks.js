@@ -83,6 +83,18 @@ const server=http.createServer((req,res)=>{res.setHeader('Content-Type','text/ht
    review:localStorage.getItem('onboarding-fictional-task-reviews-v1')
   })),preflightBefore);
   console.log('PASS: V40 inspector accepts V39/V40/combined backups, rejects malformed data, and never writes storage');
+  // Interrupted restore: switching scope or cancelling must revoke pending confirmation.
+  await page.locator('#workflowImport').setInputFiles({name:'valid-again.json',mimeType:'application/json',buffer:Buffer.from(raw)});
+  await page.getByText(/Inspected 1 checklist/).waitFor();
+  await page.locator('#workflowKind').selectOption('onboarding');
+  assert(await page.locator('#workflowRestore').isDisabled());
+  assert.equal(await page.locator('#workflowImport').inputValue(),'');
+  await page.locator('#workflowImport').setInputFiles({name:'cancel.json',mimeType:'application/json',buffer:Buffer.from(raw)});
+  await page.getByText(/Inspected 1 checklist/).waitFor();
+  await page.locator('#workflowCancelRestore').click();
+  assert(await page.locator('#workflowRestore').isDisabled());
+  assert.match(await page.locator('#workflowRestorePreview').innerText(),/No checklist restore pending/);
+  console.log('PASS: scope change and cancel invalidate pending V39 restore');
   const before=await page.evaluate(()=>localStorage.getItem('onboarding-fictional-workflows-v1'));
   await page.locator('#workflowImport').setInputFiles({name:'invalid.json',mimeType:'application/json',buffer:Buffer.from('{"format":"wrong","plans":[]}')});
   await page.getByText(/Backup rejected:/).waitFor();assert(await page.locator('#workflowRestore').isDisabled());
