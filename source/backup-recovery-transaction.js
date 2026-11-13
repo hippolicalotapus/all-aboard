@@ -14,6 +14,15 @@ const BackupRecoveryTransaction=(()=>{
     snapshots.set(store.KEY,storage.getItem(store.KEY));
    }
   }catch(_){result.errors.push('Recovery validation or snapshot failed');return result;}
+  // A staged preview must not overwrite data changed by another tab.
+  if(stage.originals){
+   for(const [name,store] of sections){
+    if(!Object.hasOwn(stage.originals,name)||snapshots.get(store.KEY)!==stage.originals[name]){
+     result.errors.push('Saved data changed since inspection; inspect backup again');
+     return result;
+    }
+   }
+  }
   const expected=new Map();
   try{
    for(const [name,store] of sections){
