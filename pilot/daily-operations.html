@@ -1,0 +1,28 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>All Aboard — Fictional Daily Operations</title><style>body{font:16px system-ui;margin:auto;max-width:820px;padding:20px;line-height:1.5}button,select{font:inherit;padding:9px;margin:5px}section{border:1px solid #888;border-radius:10px;padding:16px;margin:14px 0}button:focus,select:focus{outline:3px solid #2563eb}.note{font-weight:600}</style></head><body><h1>Daily operations — fictional pilot</h1><p>In-memory demonstration only. No payroll, costs, production records or safety approvals are submitted.</p><label for="role">View as</label><select id="role"><option value="foreman">Foreman</option><option value="superintendent">Superintendent</option><option value="accounting">Accounting</option><option value="employee">Employee (restricted)</option></select><main id="view" aria-live="polite"></main><script src="../source/daily-operations-report.js"></script><script src="../source/daily-operations-pilot.js"></script><script>
+'use strict';
+const context={companyId:'demo',projectId:'project-1',date:'2026-11-13'};
+let entries=[
+{id:'time-1',...context,kind:'time',quantity:8,unit:'hours',sourceId:'timesheet-1',status:'verified',source:'time-entry'},
+{id:'prod-1',...context,kind:'production',quantity:120,unit:'metres',sourceId:'field-1',status:'verified',source:'field-entry'},
+{id:'equip-1',...context,kind:'equipment',quantity:6,unit:'hours',sourceId:'equipment-1',status:'verified',source:'equipment-log'},
+{id:'plan-1',...context,kind:'material',quantity:30,unit:'units',sourceId:'flha-1',status:'planned',source:'flha-plan'}];
+let approved=null;
+const role=document.getElementById('role'),main=document.getElementById('view');
+function el(tag,text){const n=document.createElement(tag);n.textContent=text;return n;}
+function button(text,action){const n=el('button',text);n.type='button';n.addEventListener('click',action);return n;}
+function actor(){return {id:'fictional-'+role.value,role:role.value,companyId:'demo',projectId:'project-1',projectIds:['project-1']};}
+function render(){
+ main.replaceChildren();const report=approved||DailyOperationsReport.build(entries,context);
+ let v;try{v=DailyOperationsPilot.view(report,actor());}catch(err){main.append(el('p','Access restricted for this role.'));return;}
+ const s=el('section','');s.append(el('h2','Project daily summary'),el('p','Status: '+v.status));
+ for(const item of v.entries)s.append(el('p',item.kind+': '+item.quantity+' '+item.unit+' (verified source '+item.sourceId+')'));
+ main.append(s);
+ const e=el('section','');e.append(el('h2','Items requiring attention'));
+ if(!v.exceptions.length)e.append(el('p','No unresolved exceptions.'));
+ for(const item of v.exceptions){e.append(el('p',item.id+': '+item.reason));if(v.role==='foreman'&&!approved)e.append(button('Dismiss fictional '+item.id,()=>{entries=DailyOperationsPilot.resolve(entries,item.id,actor());render();}));}
+ main.append(e);
+ if(v.role==='foreman'&&!approved)main.append(button('Approve daily report',()=>{try{approved=DailyOperationsPilot.approve(report,actor());render();}catch(err){main.append(el('p',err.message));}}));
+ if(v.role!=='foreman')main.append(el('p','Read-only operational overview; no approval authority.'));
+}
+role.addEventListener('change',render);render();
+</script></body></html>
