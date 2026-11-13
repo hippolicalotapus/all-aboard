@@ -8,7 +8,7 @@
   events.forEach((e,i)=>{
    if(e.sequence!==i+1)problems.push('Invalid event sequence at '+(i+1));
    if(!e.companyId||!e.actorId||!e.subjectId||!e.revision)problems.push('Incomplete event at '+(i+1));
-   if(!Number.isFinite(Date.parse(e.at))||typeof e.at!=='string'||!/^\\d{4}-\\d\\d-\\d\\dT/.test(e.at))problems.push('Invalid event time at '+(i+1));
+   if(!Number.isFinite(Date.parse(e.at))||typeof e.at!=='string'||!/^\d{4}-\d\d-\d\dT/.test(e.at))problems.push('Invalid event time at '+(i+1));
    if(i>0&&e.companyId!==events[0].companyId)problems.push('Mixed company ledger at '+(i+1));
    if(e.type==='flha-reviewed'){
     const reviewKey=[e.companyId,e.subjectId,e.revision].join('|');
