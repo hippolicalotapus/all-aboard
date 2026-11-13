@@ -49,6 +49,6 @@ async function run(){
   await act('(()=>{const s=document.querySelector("#role");s.value="accounting";s.dispatchEvent(new Event("change"));return document.querySelector("main").textContent.includes("120 metres")&&![...document.querySelectorAll("main button")].some(b=>b.textContent==="Approve daily report")})()');
   await act('(()=>{const s=document.querySelector("#role");s.value="employee";s.dispatchEvent(new Event("change"));return document.querySelector("main").textContent.includes("Access restricted")&&!document.querySelector("main").textContent.includes("120 metres")})()');
   socket.close();console.log('PASS: real Chromium CDP onboarding and daily operations role/approval workflows');
- }finally{browser.kill('SIGKILL');await new Promise(resolve=>server.close(resolve));rmSync(dir,{recursive:true,force:true});}
+ }finally{browser.kill('SIGKILL');await new Promise(resolve=>server.close(resolve));await delay(250);try{rmSync(dir,{recursive:true,force:true,maxRetries:8,retryDelay:150});}catch(e){console.warn('Browser profile cleanup warning:',e.message);}}
 }
 run().catch(e=>{console.error(e);process.exitCode=1;});
