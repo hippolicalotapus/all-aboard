@@ -11,4 +11,7 @@ assert(html.includes('Nothing was imported or overwritten.'));
 assert(html.includes('backupPreflightGeneration'),'stale async reads must be ignored');
 assert(html.includes('id="workflowRestore"'),'existing V39 restore remains available');
 assert(html.includes('id="taskReviewSave"'),'V40 review controls remain available');
+assert(html.includes("if(pendingWorkflowRestore||$('workflowImport').files.length)cancelWorkflowRestore()"),'scope changes invalidate in-flight V39 file reads');
+assert(html.includes('if(generation!==workflowImportGeneration)return;const next=WorkflowStore.validate'),'late V39 file reads must not replace a cancelled preview');
+assert(html.includes('if(generation!==backupPreflightGeneration)return;'),'late V40 inspection must not overwrite newer results');
 console.log('V40 UI backup inspection and V39 isolation regression checks passed');
