@@ -32,7 +32,7 @@ const TaskReview = (() => {
   const checked=validate(value,model);
   const byStatus={pending:0,reviewed:0,'changes-requested':0};
   for(const record of checked.records)byStatus[record.status]++;
-  return {total:checked.records.length,byStatus,evidenceLinks:checked.records.filter(record=>Boolean(record.evidenceUrl)).length,employerApproval:false};
+  return {total:checked.records.length,byStatus,evidenceLinks:checked.records.filter(record=>Boolean(record.evidenceUrl)).length,missingEvidence:checked.records.filter(record=>record.status==='changes-requested'&&!record.evidenceUrl).length,employerApproval:false};
  }
  return Object.freeze({FORMAT,KEY,STATUSES,validate,empty,connect,summarize});
 })();
