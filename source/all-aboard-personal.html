@@ -824,6 +824,11 @@ $('workflowImport').addEventListener('change',async event=>{
 $('workflowRestore').addEventListener('click',()=>{if(!pendingWorkflowRestore||$('workflowRestore').disabled)return;const inspected=pendingWorkflowRestore;const generation=workflowImportGeneration;if(!confirm('Replace all saved checklist progress with the inspected backup? Certificate wallet records will be kept.'))return;if(generation!==workflowImportGeneration||pendingWorkflowRestore!==inspected)return;if(saveWorkflows(inspected))cancelWorkflowRestore();renderWorkflow()});
 renderWorkflow();
 
+// V40 read-only presentation adapter: legacy review states remain unchanged in storage.
+const V40ReviewPresentation=Object.freeze({
+ label(status){return ({pending:"Pending review",reviewed:"Reviewed (not employer approval)","changes-requested":"Changes requested"})[status]||"Not requested"},
+ summary(records){const result={pending:0,reviewed:0,changesRequested:0};for(const r of records||[]){if(r.status==="pending")result.pending++;else if(r.status==="reviewed")result.reviewed++;else if(r.status==="changes-requested")result.changesRequested++;}return result}
+});
 // Task review metadata is stored separately from V39 workflow and wallet backups.
 if(document.getElementById('taskReviewPanel')){
  let reviewRepo=null,reviewState=TaskReview.empty(),reviewBlocked=false;
