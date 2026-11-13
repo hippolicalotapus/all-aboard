@@ -1,0 +1,14 @@
+'use strict';
+const assert=require('node:assert/strict'),m=require('../source/daily-operations-report');
+const ctx={companyId:'a',projectId:'p',date:'2026-11-13'};
+const base={...ctx,id:'hours-1',kind:'time',quantity:8,unit:'hours',sourceId:'verified-time-1',status:'verified',source:'time-entry'};
+const report=m.build([base,{...base},{...base,id:'plan-1',source:'flha-plan'},{...base,id:'other-tenant',companyId:'b'}],ctx);
+assert.equal(report.entries.length,1);assert.equal(report.exceptions.length,2);assert.equal(report.status,'draft');
+assert.throws(()=>m.approve(report,{role:'foreman',companyId:'a',projectId:'p',id:'f'}),/Unresolved/);
+const clean=m.build([base],ctx);
+assert.equal(m.approve(clean,{role:'foreman',companyId:'a',projectId:'p',id:'f'}).status,'foreman-approved');
+assert.throws(()=>m.approve(clean,{role:'employee',companyId:'a',projectId:'p',id:'e'}),/foreman/);
+assert.throws(()=>m.approve(clean,{role:'foreman',companyId:'b',projectId:'p',id:'f'}),/foreman/);
+assert.throws(()=>m.approve(clean,{role:'foreman',companyId:'a',projectId:'other',id:'f'}),/foreman/);
+assert.equal(m.build([{...base,status:'draft'}],ctx).entries.length,0);
+console.log('PASS: fictional enter-once daily reports, exceptions, FLHA-plan exclusion and foreman approval');
