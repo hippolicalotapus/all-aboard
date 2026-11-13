@@ -21,4 +21,16 @@ assert.equal(bad.safeToImport,false);
 assert.deepEqual(bad.errors,['review: invalid backup']);
 assert.equal(bad.workflow.valid,true);
 assert.equal(preflight.inspect({workflow:{...legacy,plans:[{...legacy.plans[0],completed:['missing']}]},review:v40},workflow,review,model).safeToImport,false);
+for(const value of [null,[],42,'invalid']){
+ const result=preflight.inspect(value,workflow,review,model);
+ assert.equal(result.safeToImport,false,'non-object bundle rejected');
+ assert.deepEqual(result.errors,['bundle: expected JSON object']);
+}
+for(const section of ['workflow','review']){
+ for(const value of [null,undefined]){
+  const result=preflight.inspect({[section]:value},workflow,review,model);
+  assert.equal(result.safeToImport,false,section+' null/undefined section rejected');
+  assert.deepEqual(result.errors,[section+': invalid backup']);
+ }
+}
 console.log('V40 read-only preflight: V39-only, review-only, combined and invalid backups verified');
