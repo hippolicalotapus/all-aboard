@@ -8,7 +8,7 @@ const {spawn}=require('node:child_process');
 const {mkdtempSync,rmSync}=require('node:fs');
 const os=require('node:os');
 const root=path.resolve(__dirname,'..');
-const repository=require('../source/daily-report-repository'),localApi=require('../source/daily-report-local-api'),sessionsModule=require('../source/daily-report-session-store'),membershipsModule=require('../source/daily-report-durable-memberships');
+const repository=require('../source/daily-report-repository'),localApi=require('../source/daily-report-local-api'),sessionsModule=require('../source/daily-report-session-store'),membershipsModule=require('../source/daily-report-durable-memberships'),coordinatedStorage=require('../source/daily-report-storage');
 const allowed=new Set(['pilot/workforce-onboarding.html','source/safety-document-model.js','source/onboarding-workflow.js','source/safety-revision-lifecycle.js','source/onboarding-completion-records.js','source/safety-audit-trail.js','source/safety-audit-consistency.js','pilot/daily-operations.html','source/daily-operations-report.js','source/daily-operations-pilot.js','source/daily-report-lifecycle.js','pilot/persistent-daily-operations.html']);
 const delay=ms=>new Promise(r=>setTimeout(r,ms));
 async function run(){
@@ -18,9 +18,11 @@ async function run(){
  db.init('pilot',[{...ctx,id:'time-1',kind:'time',quantity:8,unit:'hours',sourceId:'clock-1',status:'verified'}],ctx,foreman);
  const api=localApi.createServer(db,new Map([['foreman',foreman],['office',office]]));
  const sessions=sessionsModule.createSessionStore(),secureForeman=sessions.issue(foreman),secureOffice=sessions.issue(office);
- const membershipFile=path.join(dbdir,'memberships.json');const initialMemberships=membershipsModule.createDurableDirectory(membershipFile);initialMemberships.grant({userId:foreman.id,companyId:'demo',projectId:'project-1',role:'foreman'});initialMemberships.grant({userId:office.id,companyId:'demo',projectId:'project-1',role:'accounting'});
- const memberships=membershipsModule.createDurableDirectory(membershipFile); // new instance simulates process restart
- const secureApi=localApi.createServer(db,new Map(),sessions,memberships);
+ const coordinated=coordinatedStorage.open(path.join(dbdir,'coordinated'));
+ coordinated.migrateLegacyMemberships([{userId:foreman.id,companyId:'demo',projectId:'project-1',role:'foreman'},{userId:office.id,companyId:'demo',projectId:'project-1',role:'accounting'}]);
+ coordinated.reports.init('pilot',[{...ctx,id:'secure-time',kind:'time',quantity:8,unit:'hours',sourceId:'secure-clock',status:'verified'}],ctx,foreman);
+ const membershipFile=coordinated.paths.memberFile,memberships=coordinated.memberships;
+ const secureApi=localApi.createServer(coordinated.reports,new Map(),sessions);
  const server=http.createServer((req,res)=>{if(req.url==='/daily-report'){api.emit('request',req,res);return;}if(req.url==='/secure-daily-report'){req.url='/daily-report';secureApi.emit('request',req,res);return;}const rel=decodeURIComponent((req.url||'/').split('?')[0]).replace(/^\//,'');if(!allowed.has(rel)){res.writeHead(404);res.end('Not found');return;}res.setHeader('Content-Type',rel.endsWith('.html')?'text/html; charset=utf-8':'text/javascript; charset=utf-8');res.end(fs.readFileSync(path.join(root,rel)));});
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
  const port=server.address().port;
@@ -77,6 +79,12 @@ async function run(){
   await act('(async()=>{const r=await fetch('+JSON.stringify(secureUrl)+',{headers:{"x-test-session":"foreman"}});return r.status===401})()');
   await act('(async()=>{const r=await fetch('+JSON.stringify(secureUrl)+',{headers:{authorization:"Bearer '+secureOffice+'"}});return r.status===200})()');
   await act('(async()=>{const r=await fetch('+JSON.stringify(secureUrl)+',{method:"POST",headers:{authorization:"Bearer '+secureOffice+'","content-type":"application/json"},body:JSON.stringify({role:"foreman",command:{type:"reopen",actionId:"forged-office",expectedRevision:2,reason:"Office impersonation"}})});return r.status!==200})()');
+  // A coordinated lock blocks both report access and membership changes.
+  const coordinatedLock=path.join(dbdir,'coordinated','coordinated-access.lock');
+  fs.writeFileSync(coordinatedLock,'busy');
+  await act('(async()=>{const r=await fetch('+JSON.stringify(secureUrl)+',{headers:{authorization:"Bearer '+secureOffice+'"}});return r.status!==200})()');
+  assert.throws(()=>memberships.revoke({userId:office.id,companyId:'demo',projectId:'project-1',role:'accounting'}),/Coordinated storage busy/);
+  fs.rmSync(coordinatedLock);
   memberships.revoke({userId:office.id,companyId:'demo',projectId:'project-1',role:'accounting'});
   await act('(async()=>{const r=await fetch('+JSON.stringify(secureUrl)+',{headers:{authorization:"Bearer '+secureOffice+'"}});return r.status===403})()');
   const restartedMemberships=membershipsModule.createDurableDirectory(membershipFile);
