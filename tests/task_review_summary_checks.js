@@ -1,0 +1,12 @@
+'use strict';
+const assert=require('node:assert/strict');
+const review=require('../source/task-review.js');
+const model=require('../source/workflow-model.js');
+const blank=review.empty();
+const summary=review.summarize(blank,model);
+assert.equal(summary.total,0);
+assert.equal(summary.evidenceLinks,0);
+assert.equal(summary.employerApproval,false);
+assert.deepEqual(summary.byStatus,{pending:0,reviewed:0,'changes-requested':0});
+assert.deepEqual(blank,review.empty());
+console.log('V40 review summary verified without V39 backup changes');
