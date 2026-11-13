@@ -700,13 +700,15 @@ $('workflowRecover').addEventListener('click',()=>{if(!confirm('Replace ALL save
 $('workflowExport').addEventListener('click',()=>{if(workflowBlocked)return;const blob=new Blob([JSON.stringify(workflowState,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download='fictional-onboarding-checklists-backup.json';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)});
 function cancelWorkflowRestore(){workflowImportGeneration++;pendingWorkflowRestore=null;$('workflowRestore').disabled=true;$('workflowCancelRestore').disabled=true;$('workflowImport').value='';$('workflowRestorePreview').textContent='No checklist restore pending.'}
 $('workflowCancelRestore').addEventListener('click',cancelWorkflowRestore);
+// Changing checklist scope invalidates any inspected replacement preview.
+for(const id of ['workflowKind','workflowRole','workflowSite'])$(id).addEventListener('change',()=>{if(pendingWorkflowRestore)cancelWorkflowRestore()});
 $('workflowImport').addEventListener('change',async event=>{
  const generation=++workflowImportGeneration;pendingWorkflowRestore=null;$('workflowRestore').disabled=true;$('workflowCancelRestore').disabled=false;
  const file=event.target.files[0];if(!file){cancelWorkflowRestore();return}
  try{if(file.size>65536)throw Error('File exceeds 64 KB');const raw=await file.text();if(generation!==workflowImportGeneration)return;const next=WorkflowStore.validate(JSON.parse(raw),WorkflowModel);pendingWorkflowRestore=next;$('workflowRestorePreview').textContent='Inspected '+next.plans.length+' checklist(s), '+next.plans.reduce((n,p)=>n+p.completed.length,0)+' acknowledged steps. Confirmation replaces ALL saved checklists; certificate records are kept.';$('workflowRestore').disabled=false}
  catch(error){if(generation!==workflowImportGeneration)return;$('workflowRestorePreview').textContent='Backup rejected: '+error.message+'. No checklist progress changed.'}
 });
-$('workflowRestore').addEventListener('click',()=>{if(!pendingWorkflowRestore||!confirm('Replace all saved checklist progress with the inspected backup? Certificate wallet records will be kept.'))return;if(saveWorkflows(pendingWorkflowRestore))cancelWorkflowRestore();renderWorkflow()});
+$('workflowRestore').addEventListener('click',()=>{if(!pendingWorkflowRestore||$('workflowRestore').disabled)return;const inspected=pendingWorkflowRestore;const generation=workflowImportGeneration;if(!confirm('Replace all saved checklist progress with the inspected backup? Certificate wallet records will be kept.'))return;if(generation!==workflowImportGeneration||pendingWorkflowRestore!==inspected)return;if(saveWorkflows(inspected))cancelWorkflowRestore();renderWorkflow()});
 renderWorkflow();
 
 // Task review metadata is stored separately from V39 workflow and wallet backups.
