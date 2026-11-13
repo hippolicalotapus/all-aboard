@@ -15,11 +15,12 @@ async function run(){
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
  const port=server.address().port;
  const dir=mkdtempSync(path.join(os.tmpdir(),'all-aboard-cdp-'));
- const browser=spawn(process.env.CHROMIUM_BIN||'chromium',['--headless','--no-sandbox','--disable-gpu','--disable-dev-shm-usage','--remote-debugging-port=0','--remote-allow-origins=*','--user-data-dir='+dir,'about:blank'],{stdio:'ignore'});
+ const browser=spawn(process.env.CHROMIUM_BIN||'chromium',['--headless=new','--no-sandbox','--disable-gpu','--disable-dev-shm-usage','--remote-debugging-port=0','--remote-allow-origins=*','--user-data-dir='+dir,'about:blank'],{stdio:['ignore','ignore','pipe']});
+ let browserErrors='';browser.stderr.on('data',chunk=>{browserErrors+=chunk.toString().slice(-2000);});
  try{
   let debugPort;
   for(let i=0;i<80;i++){if(browser.exitCode!==null)throw Error('Chromium exited before DevTools started');const f=path.join(dir,'DevToolsActivePort');if(fs.existsSync(f)){debugPort=Number(fs.readFileSync(f,'utf8').split('\n')[0]);break;}await delay(100);}
-  assert(debugPort,'Chromium DevTools port unavailable');
+  assert(debugPort,'Chromium DevTools port unavailable: '+browserErrors.slice(-1200));
   const pages=await (await fetch('http://127.0.0.1:'+debugPort+'/json')).json();
   const target=pages.find(p=>p.type==='page');assert(target,'No browser page');
   const socket=new WebSocket(target.webSocketDebuggerUrl);
