@@ -67,14 +67,19 @@ const server=http.createServer((req,res)=>{res.setHeader('Content-Type','text/ht
   const selectBundle=async (name,body)=>page.locator('#backupPreflightFile').setInputFiles({name,mimeType:'application/json',buffer:Buffer.from(body)});
   await selectBundle('v39.json',JSON.stringify({workflow:v39Backup}));
   await page.getByText(/Valid bundle: 1 workflow plan\(s\), 0 review record\(s\)/).waitFor();
+  assert.match(await page.locator('#backupRecoveryImpact').innerText(),/workflow: 1 saved → 1 in backup/);
+  assert.match(await page.locator('#backupRecoveryImpact').innerText(),/Preview only; no data changed/);
   await selectBundle('v40.json',JSON.stringify({review:v40Review}));
   await page.getByText(/Valid bundle: 0 workflow plan\(s\), 1 review record\(s\)/).waitFor();
+  assert.match(await page.locator('#backupRecoveryImpact').innerText(),/review: 0 saved → 1 in backup/);
   await selectBundle('combined.json',JSON.stringify({workflow:v39Backup,review:v40Review}));
   await page.getByText(/Valid bundle: 1 workflow plan\(s\), 1 review record\(s\)/).waitFor();
   await selectBundle('invalid-review.json',JSON.stringify({workflow:v39Backup,review:{...v40Review,records:[{...v40Review.records[0],status:'approved'}]}}));
   await page.getByText(/Bundle not ready: review: invalid backup/).waitFor();
+  assert.match(await page.locator('#backupRecoveryImpact').innerText(),/Invalid backup; no recovery impact available/);
   await selectBundle('malformed.json','{invalid');
   await page.getByText(/Inspection rejected: invalid JSON/).waitFor();
+  assert.match(await page.locator('#backupRecoveryImpact').innerText(),/Recovery impact unavailable/);
   await page.locator('#backupPreflightFile').setInputFiles([]);
   await page.getByText('No bundle inspected.').waitFor();
   assert.deepEqual(await page.evaluate(()=>({
