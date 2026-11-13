@@ -153,6 +153,26 @@ const server=http.createServer((req,res)=>{res.setHeader('Content-Type','text/ht
   })),beforeRollback,'transaction rollback must preserve workflow, review and wallet');
   console.log('PASS: simulated interrupted V40 recovery rolls back both sections and isolates wallet');
 
+  // Persistent storage failure must report unverified rollback rather than success.
+  await selectBundle('persistent-failure.json',JSON.stringify({workflow:v39Backup,review:v40Review}));
+  await page.getByText(/Valid bundle: 1 workflow plan\(s\), 1 review record\(s\)/).waitFor();
+  await page.evaluate(()=>{
+   window.__originalSetItem=Storage.prototype.setItem;
+   Storage.prototype.setItem=function(key,value){
+    if(key==='onboarding-fictional-task-reviews-v1')throw Error('persistent simulated failure');
+    return window.__originalSetItem.call(this,key,value);
+   };
+  });
+  try{
+   await page.locator('#backupRecoveryApply').click();
+   await page.getByText(/Recovery failed; rollback not verified/).waitFor();
+  }finally{
+   await page.evaluate(()=>{Storage.prototype.setItem=window.__originalSetItem});
+  }
+  assert.equal(await page.evaluate(()=>localStorage.getItem('onboardflow-fictional-wallet-v2')),beforeRollback.wallet);
+  console.log('PASS: persistent storage failure reports unverified rollback and preserves wallet');
+
+
 
   // Interrupted restore: switching scope or cancelling must revoke pending confirmation.
   await page.locator('#workflowImport').setInputFiles({name:'valid-again.json',mimeType:'application/json',buffer:Buffer.from(raw)});
