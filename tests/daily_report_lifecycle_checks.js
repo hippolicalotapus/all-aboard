@@ -13,7 +13,7 @@ state=m.action(state,f,{type:'exclude',actionId:'exclude-plan',recordId:'planned
 assert.equal(state.report.entries.length,1);
 assert.strictEqual(m.action(state,f,{type:'exclude',actionId:'exclude-plan',recordId:'planned',expectedRevision:1,reason:'Planned FLHA not actual'}),state);
 state=m.action(state,f,{type:'correct',actionId:'correct-hours',recordId:'hours',quantity:7,expectedRevision:state.revision,reason:'Verified corrected time'});
-assert.equal(state.report.entries[0].quantity,7);assert.equal(state.revision,3);assert.equal(state.events[1].oldQuantity,8);
+assert.equal(state.report.entries[0].quantity,7);assert.equal(state.revision,3);assert.equal(state.events[0].reason,'Planned FLHA not actual');assert.equal(state.events[1].oldQuantity,8);
 const superintendent={role:'superintendent',companyId:'co',projectIds:['site']};
 assert.equal(m.view(state,superintendent).canEdit,false);
 assert.throws(()=>m.view(state,{role:'accounting',companyId:'co',projectIds:['other']}),/access denied/);
