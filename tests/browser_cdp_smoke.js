@@ -8,7 +8,7 @@ const {spawn}=require('node:child_process');
 const {mkdtempSync,rmSync}=require('node:fs');
 const os=require('node:os');
 const root=path.resolve(__dirname,'..');
-const repository=require('../source/daily-report-repository'),localApi=require('../source/daily-report-local-api'),sessionsModule=require('../source/daily-report-session-store'),membershipsModule=require('../source/daily-report-memberships');
+const repository=require('../source/daily-report-repository'),localApi=require('../source/daily-report-local-api'),sessionsModule=require('../source/daily-report-session-store'),membershipsModule=require('../source/daily-report-durable-memberships');
 const allowed=new Set(['pilot/workforce-onboarding.html','source/safety-document-model.js','source/onboarding-workflow.js','source/safety-revision-lifecycle.js','source/onboarding-completion-records.js','source/safety-audit-trail.js','source/safety-audit-consistency.js','pilot/daily-operations.html','source/daily-operations-report.js','source/daily-operations-pilot.js','source/daily-report-lifecycle.js','pilot/persistent-daily-operations.html']);
 const delay=ms=>new Promise(r=>setTimeout(r,ms));
 async function run(){
@@ -18,7 +18,8 @@ async function run(){
  db.init('pilot',[{...ctx,id:'time-1',kind:'time',quantity:8,unit:'hours',sourceId:'clock-1',status:'verified'}],ctx,foreman);
  const api=localApi.createServer(db,new Map([['foreman',foreman],['office',office]]));
  const sessions=sessionsModule.createSessionStore(),secureForeman=sessions.issue(foreman),secureOffice=sessions.issue(office);
- const memberships=membershipsModule.createDirectory();memberships.grant({userId:foreman.id,companyId:'demo',projectId:'project-1',role:'foreman'});memberships.grant({userId:office.id,companyId:'demo',projectId:'project-1',role:'accounting'});
+ const membershipFile=path.join(dbdir,'memberships.json');const initialMemberships=membershipsModule.createDurableDirectory(membershipFile);initialMemberships.grant({userId:foreman.id,companyId:'demo',projectId:'project-1',role:'foreman'});initialMemberships.grant({userId:office.id,companyId:'demo',projectId:'project-1',role:'accounting'});
+ const memberships=membershipsModule.createDurableDirectory(membershipFile); // new instance simulates process restart
  const secureApi=localApi.createServer(db,new Map(),sessions,memberships);
  const server=http.createServer((req,res)=>{if(req.url==='/daily-report'){api.emit('request',req,res);return;}if(req.url==='/secure-daily-report'){req.url='/daily-report';secureApi.emit('request',req,res);return;}const rel=decodeURIComponent((req.url||'/').split('?')[0]).replace(/^\//,'');if(!allowed.has(rel)){res.writeHead(404);res.end('Not found');return;}res.setHeader('Content-Type',rel.endsWith('.html')?'text/html; charset=utf-8':'text/javascript; charset=utf-8');res.end(fs.readFileSync(path.join(root,rel)));});
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
