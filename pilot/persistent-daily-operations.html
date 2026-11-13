@@ -1,0 +1,8 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Fictional persistent daily report</title><h1>Persistent daily report — test only</h1><label>Test session <select id="session"><option value="foreman">Foreman</option><option value="office">Accounting</option><option value="employee">Employee</option></select></label><button id="reload">Load saved report</button><button id="approve">Approve report</button><button id="stale">Submit stale revision</button><main id="result" aria-live="polite"></main><script>
+'use strict';let revision=1;const session=document.querySelector('#session'),result=document.querySelector('#result');
+async function request(command){const r=await fetch('/daily-report',{method:command?'POST':'GET',headers:{'x-test-session':session.value,'content-type':'application/json'},body:command?JSON.stringify({command}):undefined});const data=await r.json();if(!r.ok){result.textContent='Request denied: '+data.error;return;}revision=data.report.revision||data.events.length+1;result.textContent='Status: '+data.report.status+' | Revision: '+revision+' | Hours: '+data.report.entries[0].quantity+' | Events: '+data.events.length;}
+document.querySelector('#reload').onclick=()=>request();
+document.querySelector('#approve').onclick=()=>request({type:'approve',actionId:'browser-approve',expectedRevision:revision});
+document.querySelector('#stale').onclick=()=>request({type:'reopen',actionId:'browser-stale',expectedRevision:1,reason:'Test stale revision'});
+session.onchange=()=>request();request();
+</script>
