@@ -698,8 +698,9 @@ if(document.getElementById('taskReviewPanel')){
   if(WorkflowModel.build(w.kind,w.role,w.site).some(t=>t.id===previous))select.value=previous;
   loadReview();
   const scoped=reviewState.records.filter(r=>r.kind===w.kind&&r.role===w.role&&r.site===w.site);
-  const counts={pending:0,reviewed:0,'changes-requested':0};for(const record of scoped)counts[record.status]++;
-  $('taskReviewSummary').textContent=scoped.length+' saved fictional review(s): '+counts.pending+' pending, '+counts.reviewed+' reviewed, '+counts['changes-requested']+' changes requested.';
+  const summary=TaskReview.summarize({format:TaskReview.FORMAT,records:scoped},WorkflowModel);
+  const counts=summary.byStatus;
+  $('taskReviewSummary').textContent=summary.total+' saved fictional review(s): '+counts.pending+' pending, '+counts.reviewed+' reviewed, '+counts['changes-requested']+' changes requested. '+summary.evidenceLinks+' evidence link(s). Not an employer approval.';
   for(const id of ['taskReviewTask','taskReviewStatus','taskReviewNote','taskReviewLink','taskReviewSave'])$(id).disabled=reviewBlocked;
  }
  $('taskReviewTask').addEventListener('change',loadReview);
