@@ -9,7 +9,7 @@ assert(!source.includes('localStorage')&&!source.includes('innerHTML'),'Pilot mu
 const listeners={};function element(tag){return {tag,children:[],value:'employee',checked:false,disabled:false,textContent:'',append(...x){this.children.push(...x)},replaceChildren(...x){this.children=x},addEventListener(name,fn){this[name]=fn}}}
 const main=element('main'),role=element('select');
 const document={createElement:element,createTextNode:s=>({textContent:s}),getElementById:id=>id==='view'?main:role};
-const context={document,Set,Date,OnboardingWorkflow:require('../source/onboarding-workflow'),SafetyRevisionLifecycle:require('../source/safety-revision-lifecycle'),OnboardingCompletionRecords:require('../source/onboarding-completion-records')};
+const context={document,Set,Date,OnboardingWorkflow:require('../source/onboarding-workflow'),SafetyRevisionLifecycle:require('../source/safety-revision-lifecycle'),OnboardingCompletionRecords:require('../source/onboarding-completion-records'),SafetyAuditTrail:require('../source/safety-audit-trail')};
 vm.runInNewContext(source,context,{timeout:2000});
 function flatten(n){return [n,...(n.children||[]).flatMap(flatten)]}
 function findButton(label){return flatten(main).find(n=>n.tag==='button'&&n.textContent===label)}
