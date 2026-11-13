@@ -1,0 +1,18 @@
+'use strict';
+const assert=require('node:assert/strict');
+const c=require('../source/safety-audit-consistency');
+const base={sequence:1,type:'flha-reviewed',companyId:'demo',actorId:'foreman',subjectId:'flha',revision:'2',at:'2026-11-13T12:00:00Z',decision:'approved'};
+assert.equal(c.validate([base],[],[]).valid,true);
+assert(c.validate([base,{...base,sequence:2,decision:'returned'}],[],[]).problems.some(x=>x.includes('Duplicate FLHA')));
+assert(c.validate([base,{...base,sequence:2,companyId:'other',subjectId:'other'}],[],[]).problems.some(x=>x.includes('Mixed company')));
+assert(c.validate([{...base,at:'bad'}],[],[]).problems.some(x=>x.includes('time')));
+assert(c.validate([{...base,decision:'pending'}],[],[]).problems.some(x=>x.includes('decision')));
+const published={sequence:1,type:'document-published',companyId:'demo',actorId:'safety',subjectId:'doc',revision:'1',at:base.at};
+const historical={id:'doc',companyId:'demo',revision:1,status:'approved'};
+assert.equal(c.validate([published],[{...historical,revision:'2'}],[],[historical]).valid,true);
+assert.equal(c.validate([published],[{...historical,revision:'2'}],[],[]).valid,false);
+const flha={id:'flha',companyId:'demo',foremanId:'foreman',revision:'2',status:'submitted'},actor={id:'foreman',companyId:'demo',role:'foreman'};
+assert.equal(c.canReview(flha,actor,[]),true);
+assert.equal(c.canReview(flha,actor,[{companyId:'demo',flhaId:'flha',revision:'2'}]),false);
+assert.equal(c.canReview(flha,{...actor,companyId:'other'},[]),false);
+console.log('PASS: tampered audit records, tenant isolation, duplicate reviews, historical revisions');
