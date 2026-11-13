@@ -79,6 +79,8 @@ async function run(){
   await act('(async()=>{const r=await fetch('+JSON.stringify(secureUrl)+',{method:"POST",headers:{authorization:"Bearer '+secureOffice+'","content-type":"application/json"},body:JSON.stringify({role:"foreman",command:{type:"reopen",actionId:"forged-office",expectedRevision:2,reason:"Office impersonation"}})});return r.status!==200})()');
   memberships.revoke({userId:office.id,companyId:'demo',projectId:'project-1',role:'accounting'});
   await act('(async()=>{const r=await fetch('+JSON.stringify(secureUrl)+',{headers:{authorization:"Bearer '+secureOffice+'"}});return r.status===403})()');
+  const restartedMemberships=membershipsModule.createDurableDirectory(membershipFile);
+  assert.equal(restartedMemberships.resolve(office.id,'demo','project-1','accounting'),null,'revoked membership must remain revoked after restart');
   sessions.revoke(secureOffice);
   await act('(async()=>{const r=await fetch('+JSON.stringify(secureUrl)+',{headers:{authorization:"Bearer '+secureOffice+'"}});return r.status===401})()');
   socket.close();console.log('PASS: real Chromium CDP onboarding, daily operations, persisted approval, reload and role restrictions');
