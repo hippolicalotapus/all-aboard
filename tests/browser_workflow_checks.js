@@ -172,6 +172,22 @@ const server=http.createServer((req,res)=>{res.setHeader('Content-Type','text/ht
   assert.equal(await page.evaluate(()=>localStorage.getItem('onboardflow-fictional-wallet-v2')),beforeRollback.wallet);
   console.log('PASS: persistent storage failure reports unverified rollback and preserves wallet');
 
+  // Reject an obsolete staged preview after another tab changes workflow storage.
+  await selectBundle('stale-preview.json',JSON.stringify({workflow:v39Backup}));
+  await page.getByText(/Valid bundle: 1 workflow plan\(s\), 0 review record\(s\)/).waitFor();
+  const staleBefore=await page.evaluate(()=>{
+   const key='onboarding-fictional-workflows-v1';
+   const previous=localStorage.getItem(key);
+   localStorage.setItem(key,'changed-by-another-tab');
+   return {previous,key};
+  });
+  await page.locator('#backupRecoveryApply').click();
+  await page.getByText(/Recovery blocked before any changes: Saved data changed since inspection/).waitFor();
+  assert.equal(await page.evaluate(key=>localStorage.getItem(key),staleBefore.key),'changed-by-another-tab');
+  await page.evaluate(({key,previous})=>{if(previous===null)localStorage.removeItem(key);else localStorage.setItem(key,previous)},staleBefore);
+  console.log('PASS: stale recovery preview is rejected without overwriting newer storage');
+
+
 
 
   // Interrupted restore: switching scope or cancelling must revoke pending confirmation.
