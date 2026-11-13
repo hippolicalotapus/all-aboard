@@ -61,6 +61,13 @@ async function run(){
   await act('(async()=>{document.querySelector("#stale").click();for(let i=0;i<40;i++){if(document.querySelector("#result").textContent.includes("revision conflict"))return true;await new Promise(r=>setTimeout(r,50));}return false})()');
   await act('(async()=>{const s=document.querySelector("#session");s.value="office";s.dispatchEvent(new Event("change"));for(let i=0;i<40;i++){if(document.querySelector("#result").textContent.includes("foreman-approved"))break;await new Promise(r=>setTimeout(r,50));}document.querySelector("#approve").click();for(let i=0;i<40;i++){if(document.querySelector("#result").textContent.includes("Request denied"))return true;await new Promise(r=>setTimeout(r,50));}return false})()');
   await act('(async()=>{const s=document.querySelector("#session");s.value="employee";s.dispatchEvent(new Event("change"));for(let i=0;i<40;i++){if(document.querySelector("#result").textContent.includes("Request denied"))return true;await new Promise(r=>setTimeout(r,50));}return false})()');
+  // Simulate an on-disk modification without updating the separately stored trusted audit head.
+  const recordFile=path.join(dbdir,'data','demo__project-1__pilot.json');
+  const original=fs.readFileSync(recordFile,'utf8'),forged=JSON.parse(original);
+  forged.events[0].actorId='forged-actor';
+  fs.writeFileSync(recordFile,JSON.stringify(forged));
+  await act('(async()=>{const s=document.querySelector("#session");s.value="foreman";s.dispatchEvent(new Event("change"));for(let i=0;i<40;i++){if(document.querySelector("#result").textContent.includes("Audit hash mismatch"))return true;await new Promise(r=>setTimeout(r,50));}return false})()');
+  fs.writeFileSync(recordFile,original);
   socket.close();console.log('PASS: real Chromium CDP onboarding, daily operations, persisted approval, reload and role restrictions');
  }finally{browser.kill('SIGKILL');await new Promise(resolve=>server.close(resolve));await delay(250);try{rmSync(dbdir,{recursive:true,force:true});}catch(e){console.warn('Browser DB cleanup warning:',e.message);}try{rmSync(dir,{recursive:true,force:true,maxRetries:8,retryDelay:150});}catch(e){console.warn('Browser profile cleanup warning:',e.message);}}
 }
