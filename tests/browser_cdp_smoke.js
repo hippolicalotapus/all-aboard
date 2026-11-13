@@ -8,7 +8,7 @@ const {spawn}=require('node:child_process');
 const {mkdtempSync,rmSync}=require('node:fs');
 const os=require('node:os');
 const root=path.resolve(__dirname,'..');
-const repository=require('../source/daily-report-repository'),localApi=require('../source/daily-report-local-api');
+const repository=require('../source/daily-report-repository'),localApi=require('../source/daily-report-local-api'),sessionsModule=require('../source/daily-report-session-store');
 const allowed=new Set(['pilot/workforce-onboarding.html','source/safety-document-model.js','source/onboarding-workflow.js','source/safety-revision-lifecycle.js','source/onboarding-completion-records.js','source/safety-audit-trail.js','source/safety-audit-consistency.js','pilot/daily-operations.html','source/daily-operations-report.js','source/daily-operations-pilot.js','source/daily-report-lifecycle.js','pilot/persistent-daily-operations.html']);
 const delay=ms=>new Promise(r=>setTimeout(r,ms));
 async function run(){
@@ -17,7 +17,9 @@ async function run(){
  const ctx={companyId:'demo',projectId:'project-1',date:'2026-11-13'},foreman={id:'browser-foreman',role:'foreman',companyId:'demo',projectId:'project-1'},office={id:'browser-office',role:'accounting',companyId:'demo',projectIds:['project-1']};
  db.init('pilot',[{...ctx,id:'time-1',kind:'time',quantity:8,unit:'hours',sourceId:'clock-1',status:'verified'}],ctx,foreman);
  const api=localApi.createServer(db,new Map([['foreman',foreman],['office',office]]));
- const server=http.createServer((req,res)=>{if(req.url==='/daily-report'){api.emit('request',req,res);return;}const rel=decodeURIComponent((req.url||'/').split('?')[0]).replace(/^\//,'');if(!allowed.has(rel)){res.writeHead(404);res.end('Not found');return;}res.setHeader('Content-Type',rel.endsWith('.html')?'text/html; charset=utf-8':'text/javascript; charset=utf-8');res.end(fs.readFileSync(path.join(root,rel)));});
+ const sessions=sessionsModule.createSessionStore(),secureForeman=sessions.issue(foreman),secureOffice=sessions.issue(office);
+ const secureApi=localApi.createServer(db,new Map(),sessions);
+ const server=http.createServer((req,res)=>{if(req.url==='/daily-report'){api.emit('request',req,res);return;}if(req.url==='/secure-daily-report'){req.url='/daily-report';secureApi.emit('request',req,res);return;}const rel=decodeURIComponent((req.url||'/').split('?')[0]).replace(/^\//,'');if(!allowed.has(rel)){res.writeHead(404);res.end('Not found');return;}res.setHeader('Content-Type',rel.endsWith('.html')?'text/html; charset=utf-8':'text/javascript; charset=utf-8');res.end(fs.readFileSync(path.join(root,rel)));});
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
  const port=server.address().port;
  const dir=mkdtempSync(path.join(os.tmpdir(),'all-aboard-cdp-'));
@@ -68,6 +70,13 @@ async function run(){
   fs.writeFileSync(recordFile,JSON.stringify(forged));
   await act('(async()=>{const s=document.querySelector("#session");s.value="foreman";s.dispatchEvent(new Event("change"));for(let i=0;i<40;i++){if(document.querySelector("#result").textContent.includes("Audit hash mismatch"))return true;await new Promise(r=>setTimeout(r,50));}return false})()');
   fs.writeFileSync(recordFile,original);
+  // Browser-to-server checks with opaque bearer tokens; role claims in the request are ignored.
+  const secureUrl='http://127.0.0.1:'+port+'/secure-daily-report';
+  await act('(async()=>{const r=await fetch('+JSON.stringify(secureUrl)+',{headers:{"x-test-session":"foreman"}});return r.status===401})()');
+  await act('(async()=>{const r=await fetch('+JSON.stringify(secureUrl)+',{headers:{authorization:"Bearer '+secureOffice+'"}});return r.status===200})()');
+  await act('(async()=>{const r=await fetch('+JSON.stringify(secureUrl)+',{method:"POST",headers:{authorization:"Bearer '+secureOffice+'","content-type":"application/json"},body:JSON.stringify({role:"foreman",command:{type:"reopen",actionId:"forged-office",expectedRevision:2,reason:"Office impersonation"}})});return r.status!==200})()');
+  sessions.revoke(secureOffice);
+  await act('(async()=>{const r=await fetch('+JSON.stringify(secureUrl)+',{headers:{authorization:"Bearer '+secureOffice+'"}});return r.status===401})()');
   socket.close();console.log('PASS: real Chromium CDP onboarding, daily operations, persisted approval, reload and role restrictions');
  }finally{browser.kill('SIGKILL');await new Promise(resolve=>server.close(resolve));await delay(250);try{rmSync(dbdir,{recursive:true,force:true});}catch(e){console.warn('Browser DB cleanup warning:',e.message);}try{rmSync(dir,{recursive:true,force:true,maxRetries:8,retryDelay:150});}catch(e){console.warn('Browser profile cleanup warning:',e.message);}}
 }
