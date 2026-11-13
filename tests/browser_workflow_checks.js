@@ -95,6 +95,25 @@ const server=http.createServer((req,res)=>{res.setHeader('Content-Type','text/ht
   assert(await page.locator('#workflowRestore').isDisabled());
   assert.match(await page.locator('#workflowRestorePreview').innerText(),/No checklist restore pending/);
   console.log('PASS: scope change and cancel invalidate pending V39 restore');
+  // Simulate a slow file read, then change scope before it resolves.
+  await page.evaluate(()=>{
+   window.__releaseSlowBackup=null;
+   window.__originalFileText=File.prototype.text;
+   File.prototype.text=function(){
+    if(this.name==='slow-v39.json')return new Promise(resolve=>{window.__releaseSlowBackup=()=>resolve(window.__slowBackupContents)});
+    return window.__originalFileText.call(this);
+   };
+   window.__slowBackupContents=JSON.stringify({format:'onboarding-fictional-workflows-v1',plans:[]});
+  });
+  await page.locator('#workflowImport').setInputFiles({name:'slow-v39.json',mimeType:'application/json',buffer:Buffer.from('{}')});
+  await page.waitForFunction(()=>typeof window.__releaseSlowBackup==='function');
+  await page.locator('#workflowRole').selectOption('office');
+  await page.evaluate(()=>window.__releaseSlowBackup());
+  await page.waitForTimeout(50);
+  assert(await page.locator('#workflowRestore').isDisabled());
+  assert.match(await page.locator('#workflowRestorePreview').innerText(),/No checklist restore pending/);
+  await page.evaluate(()=>{File.prototype.text=window.__originalFileText;delete window.__originalFileText;delete window.__releaseSlowBackup;delete window.__slowBackupContents});
+  console.log('PASS: stale asynchronous V39 backup read cannot re-enable restore after scope change');
   const before=await page.evaluate(()=>localStorage.getItem('onboarding-fictional-workflows-v1'));
   await page.locator('#workflowImport').setInputFiles({name:'invalid.json',mimeType:'application/json',buffer:Buffer.from('{"format":"wrong","plans":[]}')});
   await page.getByText(/Backup rejected:/).waitFor();assert(await page.locator('#workflowRestore').isDisabled());
