@@ -8,10 +8,16 @@ const {spawn}=require('node:child_process');
 const {mkdtempSync,rmSync}=require('node:fs');
 const os=require('node:os');
 const root=path.resolve(__dirname,'..');
-const allowed=new Set(['pilot/workforce-onboarding.html','source/safety-document-model.js','source/onboarding-workflow.js','source/safety-revision-lifecycle.js','source/onboarding-completion-records.js','source/safety-audit-trail.js','source/safety-audit-consistency.js','pilot/daily-operations.html','source/daily-operations-report.js','source/daily-operations-pilot.js','source/daily-report-lifecycle.js']);
+const repository=require('../source/daily-report-repository'),localApi=require('../source/daily-report-local-api');
+const allowed=new Set(['pilot/workforce-onboarding.html','source/safety-document-model.js','source/onboarding-workflow.js','source/safety-revision-lifecycle.js','source/onboarding-completion-records.js','source/safety-audit-trail.js','source/safety-audit-consistency.js','pilot/daily-operations.html','source/daily-operations-report.js','source/daily-operations-pilot.js','source/daily-report-lifecycle.js','pilot/persistent-daily-operations.html']);
 const delay=ms=>new Promise(r=>setTimeout(r,ms));
 async function run(){
- const server=http.createServer((req,res)=>{const rel=decodeURIComponent((req.url||'/').split('?')[0]).replace(/^\//,'');if(!allowed.has(rel)){res.writeHead(404);res.end('Not found');return;}res.setHeader('Content-Type',rel.endsWith('.html')?'text/html; charset=utf-8':'text/javascript; charset=utf-8');res.end(fs.readFileSync(path.join(root,rel)));});
+ const dbdir=mkdtempSync(path.join(os.tmpdir(),'aa-browser-db-'));
+ const db=repository.create(path.join(dbdir,'data'),path.join(dbdir,'trusted'));
+ const ctx={companyId:'demo',projectId:'project-1',date:'2026-11-13'},foreman={id:'browser-foreman',role:'foreman',companyId:'demo',projectId:'project-1'},office={id:'browser-office',role:'accounting',companyId:'demo',projectIds:['project-1']};
+ db.init('pilot',[{...ctx,id:'time-1',kind:'time',quantity:8,unit:'hours',sourceId:'clock-1',status:'verified'}],ctx,foreman);
+ const api=localApi.createServer(db,new Map([['foreman',foreman],['office',office]]));
+ const server=http.createServer((req,res)=>{if(req.url==='/daily-report'){api.emit('request',req,res);return;}const rel=decodeURIComponent((req.url||'/').split('?')[0]).replace(/^\//,'');if(!allowed.has(rel)){res.writeHead(404);res.end('Not found');return;}res.setHeader('Content-Type',rel.endsWith('.html')?'text/html; charset=utf-8':'text/javascript; charset=utf-8');res.end(fs.readFileSync(path.join(root,rel)));});
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
  const port=server.address().port;
  const dir=mkdtempSync(path.join(os.tmpdir(),'all-aboard-cdp-'));
@@ -48,7 +54,14 @@ async function run(){
   await act('(()=>{const b=[...document.querySelectorAll("button")].find(x=>x.textContent==="Reopen approved report");if(!b)return false;b.click();return document.body.textContent.includes("Status: draft")})()');
   await act('(()=>{const s=document.querySelector("#role");s.value="accounting";s.dispatchEvent(new Event("change"));return document.querySelector("main").textContent.includes("120 metres")&&![...document.querySelectorAll("main button")].some(b=>b.textContent==="Approve daily report")})()');
   await act('(()=>{const s=document.querySelector("#role");s.value="employee";s.dispatchEvent(new Event("change"));return document.querySelector("main").textContent.includes("Access restricted")&&!document.querySelector("main").textContent.includes("120 metres")})()');
-  socket.close();console.log('PASS: real Chromium CDP onboarding and daily operations role/approval workflows');
- }finally{browser.kill('SIGKILL');await new Promise(resolve=>server.close(resolve));await delay(250);try{rmSync(dir,{recursive:true,force:true,maxRetries:8,retryDelay:150});}catch(e){console.warn('Browser profile cleanup warning:',e.message);}}
+  await command('Page.navigate',{url:'http://127.0.0.1:'+port+'/pilot/persistent-daily-operations.html'});
+  let persistent=false;for(let i=0;i<80;i++){persistent=await evaluate('document.querySelector("#result")?.textContent.includes("Status: draft")');if(persistent)break;await delay(100);}assert(persistent,'Persistent browser pilot failed');
+  await act('(async()=>{document.querySelector("#approve").click();for(let i=0;i<40;i++){if(document.querySelector("#result").textContent.includes("foreman-approved"))return true;await new Promise(r=>setTimeout(r,50));}return false})()');
+  await command('Page.reload',{ignoreCache:true});let reloaded=false;for(let i=0;i<80;i++){reloaded=await evaluate('document.querySelector("#result")?.textContent.includes("foreman-approved")');if(reloaded)break;await delay(100);}assert(reloaded,'Approved report did not survive reload');
+  await act('(async()=>{document.querySelector("#stale").click();for(let i=0;i<40;i++){if(document.querySelector("#result").textContent.includes("revision conflict"))return true;await new Promise(r=>setTimeout(r,50));}return false})()');
+  await act('(async()=>{const s=document.querySelector("#session");s.value="office";s.dispatchEvent(new Event("change"));for(let i=0;i<40;i++){if(document.querySelector("#result").textContent.includes("foreman-approved"))break;await new Promise(r=>setTimeout(r,50));}document.querySelector("#approve").click();for(let i=0;i<40;i++){if(document.querySelector("#result").textContent.includes("Request denied"))return true;await new Promise(r=>setTimeout(r,50));}return false})()');
+  await act('(async()=>{const s=document.querySelector("#session");s.value="employee";s.dispatchEvent(new Event("change"));for(let i=0;i<40;i++){if(document.querySelector("#result").textContent.includes("Request denied"))return true;await new Promise(r=>setTimeout(r,50));}return false})()');
+  socket.close();console.log('PASS: real Chromium CDP onboarding, daily operations, persisted approval, reload and role restrictions');
+ }finally{browser.kill('SIGKILL');await new Promise(resolve=>server.close(resolve));await delay(250);try{rmSync(dbdir,{recursive:true,force:true});}catch(e){console.warn('Browser DB cleanup warning:',e.message);}try{rmSync(dir,{recursive:true,force:true,maxRetries:8,retryDelay:150});}catch(e){console.warn('Browser profile cleanup warning:',e.message);}}
 }
 run().catch(e=>{console.error(e);process.exitCode=1;});
