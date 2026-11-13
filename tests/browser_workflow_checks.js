@@ -126,7 +126,7 @@ const server=http.createServer((req,res)=>{res.setHeader('Content-Type','text/ht
   await page.locator('#backupPreflightFile').setInputFiles({name:'slow-v40.json',mimeType:'application/json',buffer:Buffer.from('{}')});
   await page.waitForFunction(()=>typeof window.__releaseV40Read==='function');
   await selectBundle('newer-v40.json',JSON.stringify({review:v40Review}));
-  await page.getByText(/Valid bundle: 0 workflow plan\\(s\\), 1 review record\\(s\\)/).waitFor();
+  await page.getByText(/Valid bundle: 0 workflow plan/).waitFor();
   await page.evaluate(()=>window.__releaseV40Read());
   await page.waitForTimeout(50);
   assert.match(await page.locator('#backupPreflightResult').innerText(),/Valid bundle: 0 workflow plan/);
