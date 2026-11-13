@@ -46,8 +46,8 @@ async function run(){
   await act('(()=>{const b=[...document.querySelectorAll("button")].find(x=>x.textContent==="Dismiss fictional plan-1");if(!b)return false;b.click();return document.body.textContent.includes("No unresolved exceptions")})()');
   await act('(()=>{const b=[...document.querySelectorAll("button")].find(x=>x.textContent==="Approve daily report");if(!b)return false;b.click();return document.body.textContent.includes("foreman-approved")})()');
   await act('(()=>{const b=[...document.querySelectorAll("button")].find(x=>x.textContent==="Reopen approved report");if(!b)return false;b.click();return document.body.textContent.includes("Status: draft")})()');
-  await act('(()=>{const s=document.querySelector("#role");s.value="accounting";s.dispatchEvent(new Event("change"));return document.body.textContent.includes("120 metres")&&!document.body.textContent.includes("Approve daily report")})()');
-  await act('(()=>{const s=document.querySelector("#role");s.value="employee";s.dispatchEvent(new Event("change"));return document.body.textContent.includes("Access restricted")&&!document.body.textContent.includes("120 metres")})()');
+  await act('(()=>{const s=document.querySelector("#role");s.value="accounting";s.dispatchEvent(new Event("change"));return document.querySelector("main").textContent.includes("120 metres")&&![...document.querySelectorAll("main button")].some(b=>b.textContent==="Approve daily report")})()');
+  await act('(()=>{const s=document.querySelector("#role");s.value="employee";s.dispatchEvent(new Event("change"));return document.querySelector("main").textContent.includes("Access restricted")&&!document.querySelector("main").textContent.includes("120 metres")})()');
   socket.close();console.log('PASS: real Chromium CDP onboarding and daily operations role/approval workflows');
  }finally{browser.kill('SIGKILL');await new Promise(resolve=>server.close(resolve));rmSync(dir,{recursive:true,force:true});}
 }
