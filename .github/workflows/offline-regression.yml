@@ -39,9 +39,14 @@ jobs:
         run: |
           test -s dist/Employee_Onboarding_Test_v39.html
           grep -q 'walletWorkspace' dist/Employee_Onboarding_Test_v39.html
+      - name: Real Chromium browser smoke tests
+        run: |
+          BROWSER=$(command -v chromium || command -v chromium-browser || command -v google-chrome || true)
+          if [ -z "$BROWSER" ]; then echo 'Chromium/Chrome missing on runner'; exit 1; fi
+          CHROMIUM_BIN="$BROWSER" node tests/browser_cdp_smoke.js
       - name: Summarize unverified release gates
         if: always()
         run: |
-          echo 'Browser E2E: NOT RUN in this workflow' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Browser E2E: see Real Chromium browser smoke tests step' >> "$GITHUB_STEP_SUMMARY"
           echo 'Real Android device: NOT RUN' >> "$GITHUB_STEP_SUMMARY"
           echo 'Production deployment: NOT PERFORMED' >> "$GITHUB_STEP_SUMMARY"
