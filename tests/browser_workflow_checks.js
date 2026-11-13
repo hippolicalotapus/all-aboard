@@ -114,6 +114,24 @@ const server=http.createServer((req,res)=>{res.setHeader('Content-Type','text/ht
   assert.match(await page.locator('#workflowRestorePreview').innerText(),/No checklist restore pending/);
   await page.evaluate(()=>{File.prototype.text=window.__originalFileText;delete window.__originalFileText;delete window.__releaseSlowBackup;delete window.__slowBackupContents});
   console.log('PASS: stale asynchronous V39 backup read cannot re-enable restore after scope change');
+  // V40: a slow, obsolete inspection must never overwrite a newer valid result.
+  await page.evaluate(()=>{
+   window.__originalV40Text=File.prototype.text;
+   window.__releaseV40Read=null;
+   File.prototype.text=function(){
+    if(this.name==='slow-v40.json')return new Promise(resolve=>{window.__releaseV40Read=()=>resolve('{invalid')});
+    return window.__originalV40Text.call(this);
+   };
+  });
+  await page.locator('#backupPreflightFile').setInputFiles({name:'slow-v40.json',mimeType:'application/json',buffer:Buffer.from('{}')});
+  await page.waitForFunction(()=>typeof window.__releaseV40Read==='function');
+  await selectBundle('newer-v40.json',JSON.stringify({review:v40Review}));
+  await page.getByText(/Valid bundle: 0 workflow plan\\(s\\), 1 review record\\(s\\)/).waitFor();
+  await page.evaluate(()=>window.__releaseV40Read());
+  await page.waitForTimeout(50);
+  assert.match(await page.locator('#backupPreflightResult').innerText(),/Valid bundle: 0 workflow plan/);
+  await page.evaluate(()=>{File.prototype.text=window.__originalV40Text;delete window.__originalV40Text;delete window.__releaseV40Read});
+  console.log('PASS: obsolete V40 asynchronous inspection cannot replace newer result');
   const before=await page.evaluate(()=>localStorage.getItem('onboarding-fictional-workflows-v1'));
   await page.locator('#workflowImport').setInputFiles({name:'invalid.json',mimeType:'application/json',buffer:Buffer.from('{"format":"wrong","plans":[]}')});
   await page.getByText(/Backup rejected:/).waitFor();assert(await page.locator('#workflowRestore').isDisabled());
