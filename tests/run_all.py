@@ -26,6 +26,8 @@ if not source_modules:
     print("FAIL: no standalone JavaScript source modules found", flush=True)
     sys.exit(1)
 checks.extend(["node", "--check", str(path.relative_to(ROOT))] for path in source_modules)
+# Browser suites remain unexecuted here, but their JavaScript must parse before release.
+checks.extend(["node", "--check", str(path.relative_to(ROOT))] for path in sorted(TESTS.glob("browser_*.js")))
 # Browser checks require Playwright/Chromium and are an independent release gate.
 # Never accidentally run them as part of the offline-only suite.
 offline_js_checks = [
