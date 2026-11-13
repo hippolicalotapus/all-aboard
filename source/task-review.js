@@ -28,12 +28,16 @@ const TaskReview = (() => {
   read(){const raw=storage.getItem(KEY);return raw===null?empty():validate(JSON.parse(raw),model)},
   write(value){const next=validate(value,model);const before=storage.getItem(KEY);try{const raw=JSON.stringify(next);storage.setItem(KEY,raw);if(storage.getItem(KEY)!==raw)throw Error('Write not retained');return {ok:true,value:next}}catch(e){let recovered=false;try{if(before===null)storage.removeItem(KEY);else storage.setItem(KEY,before);recovered=storage.getItem(KEY)===before}catch(_){}return {ok:false,recovered}}}
  }}
+ function reviewAttention(value,model){
+  const checked=validate(value,model);
+  return checked.records.filter(record=>record.status==='changes-requested'&&!record.evidenceUrl).map(record=>({kind:record.kind,role:record.role,site:record.site,taskId:record.taskId,needsEvidence:true,employerApproval:false}));
+ }
  function summarize(value,model){
   const checked=validate(value,model);
   const byStatus={pending:0,reviewed:0,'changes-requested':0};
   for(const record of checked.records)byStatus[record.status]++;
   return {total:checked.records.length,byStatus,evidenceLinks:checked.records.filter(record=>Boolean(record.evidenceUrl)).length,missingEvidence:checked.records.filter(record=>record.status==='changes-requested'&&!record.evidenceUrl).length,employerApproval:false};
  }
- return Object.freeze({FORMAT,KEY,STATUSES,validate,empty,connect,summarize});
+ return Object.freeze({FORMAT,KEY,STATUSES,validate,empty,connect,summarize,reviewAttention});
 })();
 if(typeof module!=='undefined'&&module.exports)module.exports=TaskReview;
