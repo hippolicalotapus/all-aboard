@@ -1,39 +1,19 @@
-<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>All Aboard | Fictional Workforce Pilot</title>
-<style>body{font:16px system-ui,sans-serif;max-width:820px;margin:2rem auto;padding:0 1rem;color:#182638;background:#f5f7fa}header,section{background:white;border:1px solid #d7e0ea;border-radius:12px;padding:1rem;margin-bottom:1rem}button,select{font:inherit;padding:.6rem;margin:.25rem;border-radius:8px;border:1px solid #64748b}button{background:#163b69;color:white;cursor:pointer}button:disabled{opacity:.5;cursor:not-allowed}.muted{color:#475569}.item{border-top:1px solid #e2e8f0;padding:.7rem 0}label{display:block;margin:.4rem 0}#message{min-height:1.5em}</style></head><body>
-<header><h1>All Aboard — Workforce Pilot</h1><p class="muted">Fictional data only. This is not a live safety sign-off, payroll or employee record system. Refresh resets this demonstration.</p><label for="persona">Demo role</label><select id="persona"><option value="employee">Employee</option><option value="safety-admin">Safety administrator</option><option value="foreman">Foreman</option></select></header>
-<main id="view" aria-live="polite"></main><p id="message" role="status"></p>
-<script src="../source/safety-document-model.js"></script><script src="../source/onboarding-workflow.js"></script>
-<script>
-'use strict';
-(function(){
-const docs=[{id:'swp-1',companyId:'demo-co',title:'Excavation safe work procedure',revision:'1',type:'SWP',status:'approved',roles:['employee'],approvedBy:'safety-1'},{id:'jsa-2',companyId:'demo-co',title:'Working near mobile equipment',revision:'2',type:'JSA',status:'approved',roles:['employee'],approvedBy:'safety-1'}];
-const employee={id:'worker-1',companyId:'demo-co',role:'employee'};
-const safety={id:'safety-1',companyId:'demo-co',role:'safety-admin'};
-const foreman={id:'foreman-1',companyId:'demo-co',role:'foreman'};
-const flha={id:'flha-1',companyId:'demo-co',foremanId:'foreman-1',revision:'1',status:'submitted'};
-let records=[],review=null,read=new Set();
-const view=document.getElementById('view'),message=document.getElementById('message'),persona=document.getElementById('persona');
-function el(tag,text){const n=document.createElement(tag);if(text!==undefined)n.textContent=text;return n;}
-function addButton(parent,text,fn,disabled=false){const b=el('button',text);b.disabled=disabled;b.addEventListener('click',fn);parent.append(b);}
-function section(title){const s=el('section');s.append(el('h2',title));view.append(s);return s;}
-function render(){view.replaceChildren();message.textContent='';const role=persona.value;
-if(role==='employee'){
- const p=OnboardingWorkflow.packageFor(docs,employee,records),s=section('My onboarding documents');
- s.append(el('p',p.completed+' of '+p.total+' acknowledged'));
- p.items.forEach(item=>{const d=item.document,row=el('div');row.className='item';row.append(el('strong',d.title+' — revision '+d.revision));row.append(el('p',item.acknowledged?'Acknowledged':'Awaiting review and acknowledgement'));
- if(!item.acknowledged){const check=el('label'),input=el('input');input.type='checkbox';input.checked=read.has(d.id+'@'+d.revision);input.addEventListener('change',()=>{if(input.checked)read.add(d.id+'@'+d.revision);else read.delete(d.id+'@'+d.revision);render();});check.append(input,document.createTextNode(' I reviewed this fictional document (demo only)'));row.append(check);addButton(row,'Acknowledge revision',()=>{records=OnboardingWorkflow.submitAcknowledgement(docs,employee,{documentId:d.id,revision:d.revision,reviewed:true,acknowledgedAt:new Date().toISOString()},records);render();},!read.has(d.id+'@'+d.revision));}
- s.append(row);});
-}else if(role==='safety-admin'){
- const s=section('Onboarding progress');const summaries=OnboardingWorkflow.roleView(safety,[employee],docs,records);
- summaries.forEach(p=>s.append(el('p',p.employeeId+': '+p.completed+' / '+p.total+' documents acknowledged')));
- s.append(el('p','Document publishing and employee authentication are not part of this demo.'));
-}else{
- const s=section('Assigned FLHA review');s.append(el('p','FLHA '+flha.id+' — revision '+flha.revision+' — submitted'));
- if(review){s.append(el('p','Decision: '+review.status+' for revision '+review.revision));return;}
- addButton(s,'Approve fictional FLHA',()=>{review=OnboardingWorkflow.flhaReview(flha,foreman,{status:'approved',reviewedAt:new Date().toISOString()});render();});
- addButton(s,'Return for correction',()=>{review=OnboardingWorkflow.flhaReview(flha,foreman,{status:'returned',reason:'Demo: clarify controls',reviewedAt:new Date().toISOString()});render();});
-}}
-persona.addEventListener('change',render);render();
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>All Aboard fictional onboarding pilot</title><style>body{font:16px system-ui;max-width:760px;margin:2rem auto;padding:1rem;background:#f4f7fa;color:#14253b}header,section{background:white;padding:1rem;border-radius:12px;margin-bottom:1rem;border:1px solid #ccd5df}button,select{font:inherit;padding:.55rem;margin:.3rem;border-radius:7px}button{background:#153e72;color:white}button:disabled{opacity:.5}article{border-top:1px solid #ddd;padding:1rem 0}pre{white-space:pre-wrap;background:#f1f5f9;padding:1rem}label{display:block}</style></head><body><header><h1>All Aboard — Fictional workforce pilot</h1><p>Demo only. Not a valid safety sign-off or production employee record. Refresh resets all changes.</p><label for="role">View as</label><select id="role"><option value="employee">Employee</option><option value="safety-admin">Safety administrator</option><option value="foreman">Foreman</option></select></header><main id="view" aria-live="polite"></main><script src="../source/safety-document-model.js"></script><script src="../source/onboarding-workflow.js"></script><script>
+'use strict';(()=>{
+const docs=[{id:'swp-1',companyId:'demo',title:'Excavation procedure',revision:'1',type:'SWP',status:'approved',roles:['employee'],approvedBy:'safety'},{id:'jsa-1',companyId:'demo',title:'Mobile equipment hazard analysis',revision:'2',type:'JSA',status:'approved',roles:['employee'],approvedBy:'safety'}];
+const content={'swp-1@1':'FICTIONAL EXAMPLE ONLY. Review excavation boundaries, locate buried services, verify protective systems, and stop work when conditions change.','jsa-1@2':'FICTIONAL EXAMPLE ONLY. Identify vehicle routes, establish separation zones, confirm communication and review changing site conditions.'};
+const employee={id:'worker',companyId:'demo',role:'employee'},safety={id:'safety',companyId:'demo',role:'safety-admin'},foreman={id:'foreman',companyId:'demo',role:'foreman'},flha={id:'flha-1',companyId:'demo',foremanId:'foreman',revision:'1',status:'submitted'};
+let records=[],review=null;const viewed=new Set(),confirmed=new Set(),main=document.getElementById('view'),role=document.getElementById('role');
+function node(tag,value){const e=document.createElement(tag);if(value!==undefined)e.textContent=value;return e}
+function button(parent,label,callback,disabled=false){const b=node('button',label);b.disabled=disabled;b.addEventListener('click',callback);parent.append(b)}
+function section(title){const e=node('section');e.append(node('h2',title));main.append(e);return e}
+function render(){main.replaceChildren();
+if(role.value==='employee'){const pkg=OnboardingWorkflow.packageFor(docs,employee,records),s=section('My safety onboarding');s.append(node('p',pkg.completed+' of '+pkg.total+' acknowledged'));
+for(const item of pkg.items){const d=item.document,k=d.id+'@'+d.revision,a=node('article');a.append(node('h3',d.title+' — revision '+d.revision),node('p',item.acknowledged?'Acknowledged':'Not yet acknowledged'));
+button(a,'Read document',()=>{viewed.add(k);render()});
+if(viewed.has(k)){a.append(node('pre',content[k]));if(!item.acknowledged){const label=node('label'),c=node('input');c.type='checkbox';c.checked=confirmed.has(k);c.addEventListener('change',()=>{if(c.checked)confirmed.add(k);else confirmed.delete(k);render()});label.append(c,document.createTextNode(' I reviewed the fictional text above'));a.append(label);button(a,'Acknowledge this revision',()=>{records=OnboardingWorkflow.submitAcknowledgement(docs,employee,{documentId:d.id,revision:d.revision,reviewed:true,acknowledgedAt:new Date().toISOString()},records);render()},!confirmed.has(k));}}s.append(a)}}
+else if(role.value==='safety-admin'){const s=section('Employee onboarding progress');for(const x of OnboardingWorkflow.roleView(safety,[employee],docs,records))s.append(node('p',x.employeeId+': '+x.completed+' of '+x.total+' acknowledged'));s.append(node('p','Fictional demonstration: publishing and employee authentication are not enabled.'))}
+else{const s=section('Assigned FLHA');s.append(node('p','FLHA '+flha.id+' revision '+flha.revision+' — submitted'));s.append(node('pre','Fictional work: excavation. Hazards: moving machinery and buried services. Controls: exclusion zone and service locate.'));if(review){s.append(node('p','Decision: '+review.status+' on revision '+review.revision));return}button(s,'Approve revision',()=>{review=OnboardingWorkflow.flhaReview(flha,foreman,{status:'approved',reviewedAt:new Date().toISOString()});render()});button(s,'Return for correction',()=>{review=OnboardingWorkflow.flhaReview(flha,foreman,{status:'returned',reason:'Clarify protective controls',reviewedAt:new Date().toISOString()});render()})}}
+role.addEventListener('change',render);render();
 })();
 </script></body></html>
