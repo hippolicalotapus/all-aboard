@@ -56,6 +56,33 @@ const server=http.createServer((req,res)=>{res.setHeader('Content-Type','text/ht
   await page.locator('#workflowRestore').click();
   assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('onboarding-fictional-workflows-v1')).plans.length),1);
   console.log('PASS: exported backup previews before confirmed restore');
+  // V40 bundle inspector: read-only, including stale and malformed selection.
+  const preflightBefore=await page.evaluate(()=>({
+   workflow:localStorage.getItem('onboarding-fictional-workflows-v1'),
+   wallet:localStorage.getItem('onboardflow-fictional-wallet-v2'),
+   review:localStorage.getItem('onboarding-fictional-task-reviews-v1')
+  }));
+  const v39Backup=JSON.parse(raw);
+  const v40Review={format:'onboarding-fictional-task-reviews-v1',records:[{kind:'onboarding',role:'field',site:'jobsite',taskId:'training',status:'changes-requested',note:'Fictional',evidenceUrl:''}]};
+  const selectBundle=async (name,body)=>page.locator('#backupPreflightFile').setInputFiles({name,mimeType:'application/json',buffer:Buffer.from(body)});
+  await selectBundle('v39.json',JSON.stringify({workflow:v39Backup}));
+  await page.getByText(/Valid bundle: 1 workflow plan\(s\), 0 review record\(s\)/).waitFor();
+  await selectBundle('v40.json',JSON.stringify({review:v40Review}));
+  await page.getByText(/Valid bundle: 0 workflow plan\(s\), 1 review record\(s\)/).waitFor();
+  await selectBundle('combined.json',JSON.stringify({workflow:v39Backup,review:v40Review}));
+  await page.getByText(/Valid bundle: 1 workflow plan\(s\), 1 review record\(s\)/).waitFor();
+  await selectBundle('invalid-review.json',JSON.stringify({workflow:v39Backup,review:{...v40Review,records:[{...v40Review.records[0],status:'approved'}]}}));
+  await page.getByText(/Bundle not ready: review: invalid backup/).waitFor();
+  await selectBundle('malformed.json','{invalid');
+  await page.getByText(/Inspection rejected: invalid JSON/).waitFor();
+  await page.locator('#backupPreflightFile').setInputFiles([]);
+  await page.getByText('No bundle inspected.').waitFor();
+  assert.deepEqual(await page.evaluate(()=>({
+   workflow:localStorage.getItem('onboarding-fictional-workflows-v1'),
+   wallet:localStorage.getItem('onboardflow-fictional-wallet-v2'),
+   review:localStorage.getItem('onboarding-fictional-task-reviews-v1')
+  })),preflightBefore);
+  console.log('PASS: V40 inspector accepts V39/V40/combined backups, rejects malformed data, and never writes storage');
   const before=await page.evaluate(()=>localStorage.getItem('onboarding-fictional-workflows-v1'));
   await page.locator('#workflowImport').setInputFiles({name:'invalid.json',mimeType:'application/json',buffer:Buffer.from('{"format":"wrong","plans":[]}')});
   await page.getByText(/Backup rejected:/).waitFor();assert(await page.locator('#workflowRestore').isDisabled());
