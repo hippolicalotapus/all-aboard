@@ -121,6 +121,39 @@ const server=http.createServer((req,res)=>{res.setHeader('Content-Type','text/ht
   },preflightBefore);
   console.log('PASS: confirmed V40 review recovery preserves V39 workflows and wallet');
 
+  // Force a one-time failure after the first section is written; verify rollback of both.
+  const beforeRollback=await page.evaluate(()=>({
+   workflow:localStorage.getItem('onboarding-fictional-workflows-v1'),
+   review:localStorage.getItem('onboarding-fictional-task-reviews-v1'),
+   wallet:localStorage.getItem('onboardflow-fictional-wallet-v2')
+  }));
+  await selectBundle('rollback.json',JSON.stringify({workflow:v39Backup,review:v40Review}));
+  await page.getByText(/Valid bundle: 1 workflow plan\(s\), 1 review record\(s\)/).waitFor();
+  await page.evaluate(()=>{
+   window.__originalSetItem=Storage.prototype.setItem;
+   window.__failReviewOnce=true;
+   Storage.prototype.setItem=function(key,value){
+    if(key==='onboarding-fictional-task-reviews-v1'&&window.__failReviewOnce){
+     window.__failReviewOnce=false;
+     throw Error('simulated one-time write failure');
+    }
+    return window.__originalSetItem.call(this,key,value);
+   };
+  });
+  try{
+   await page.locator('#backupRecoveryApply').click();
+   await page.getByText(/Recovery failed; previous data restored and verified/).waitFor();
+  }finally{
+   await page.evaluate(()=>{Storage.prototype.setItem=window.__originalSetItem});
+  }
+  assert.deepEqual(await page.evaluate(()=>({
+   workflow:localStorage.getItem('onboarding-fictional-workflows-v1'),
+   review:localStorage.getItem('onboarding-fictional-task-reviews-v1'),
+   wallet:localStorage.getItem('onboardflow-fictional-wallet-v2')
+  })),beforeRollback,'transaction rollback must preserve workflow, review and wallet');
+  console.log('PASS: simulated interrupted V40 recovery rolls back both sections and isolates wallet');
+
+
   // Interrupted restore: switching scope or cancelling must revoke pending confirmation.
   await page.locator('#workflowImport').setInputFiles({name:'valid-again.json',mimeType:'application/json',buffer:Buffer.from(raw)});
   await page.getByText(/Inspected 1 checklist/).waitFor();
