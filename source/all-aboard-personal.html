@@ -841,7 +841,9 @@ if(document.getElementById('taskReviewPanel')){
   const output=$('taskReviewReportOutput');
   if(reviewBlocked){output.textContent='Review data is unavailable; no report generated.';return}
   try{
-   const report=TaskReview.generateReviewReport(reviewState,WorkflowModel);
+   const scope=workflowSelection();
+   const scopedRecords=reviewState.records.filter(record=>record.kind===scope.kind&&record.role===scope.role&&record.site===scope.site);
+   const report=TaskReview.generateReviewReport({format:TaskReview.FORMAT,records:scopedRecords},WorkflowModel);
    output.textContent=JSON.stringify(report,null,2);
   }catch(error){output.textContent='Report unavailable: review data failed validation.'}
  });
