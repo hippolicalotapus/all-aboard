@@ -38,6 +38,11 @@ const TaskReview = (() => {
   for(const record of checked.records)byStatus[record.status]++;
   return {total:checked.records.length,byStatus,evidenceLinks:checked.records.filter(record=>Boolean(record.evidenceUrl)).length,missingEvidence:checked.records.filter(record=>record.status==='changes-requested'&&!record.evidenceUrl).length,employerApproval:false};
  }
- return Object.freeze({FORMAT,KEY,STATUSES,validate,empty,connect,summarize,reviewAttention});
+ function generateReviewReport(value,model){
+  const checked=validate(value,model);
+  const summary=summarize(checked,model);
+  return Object.freeze({format:'onboarding-fictional-review-report-v1',fictionalDataOnly:true,employerApproval:false,summary,items:checked.records.map(({kind,role,site,taskId,status,note,evidenceUrl})=>Object.freeze({kind,role,site,taskId,status,note,evidenceUrl,needsAttention:status==='changes-requested'&&!evidenceUrl}))});
+ }
+ return Object.freeze({FORMAT,KEY,STATUSES,validate,empty,connect,summarize,reviewAttention,generateReviewReport});
 })();
 if(typeof module!=='undefined'&&module.exports)module.exports=TaskReview;
