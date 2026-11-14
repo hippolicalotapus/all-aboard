@@ -21,7 +21,10 @@ checks = [
     ["python3", "tests/check_inline_js.py", "source/all-aboard-personal.html"],
 ]
 # Syntax-check every standalone source module, including newly added ones.
-source_modules = sorted((ROOT / "source").glob("*.js"))
+source_modules = sorted(
+    path for pattern in ("*.js", "*.cjs", "*.mjs")
+    for path in (ROOT / "source").glob(pattern)
+)
 if not source_modules:
     print("FAIL: no standalone JavaScript source modules found", flush=True)
     sys.exit(1)
@@ -35,6 +38,13 @@ offline_js_checks = [
     if not path.name.startswith("browser_")
 ]
 checks.extend(["node", str(path.relative_to(ROOT))] for path in offline_js_checks)
+# Node test-runner suites use a separate naming convention from legacy checks.
+node_test_suites = sorted(
+    path for pattern in ("*.test.js", "*.test.cjs", "*.test.mjs")
+    for path in TESTS.glob(pattern)
+    if not path.name.startswith("browser_")
+)
+checks.extend(["node", "--test", str(path.relative_to(ROOT))] for path in node_test_suites)
 if not any(any(part.endswith("/runtime_checks.js") or part == "runtime_checks.js" for part in cmd) for cmd in checks):
     print("FAIL: runtime_checks.js was not discovered", flush=True)
     sys.exit(1)
