@@ -14,7 +14,9 @@
    if(!kinds.has(e.kind)){exceptions.push({id,reason:'unsupported-kind'});continue;}
    if(e.source==='flha-plan'||e.status!=='verified'){exceptions.push({id,reason:'not-verified-actual'});continue;}
    if(typeof e.quantity!=='number'||!Number.isFinite(e.quantity)||e.quantity<0){exceptions.push({id,reason:'invalid-quantity'});continue;}
-   const sourceId=str(e.sourceId,'source id'),sourceKey=JSON.stringify([e.kind,sourceId]);
+   if(typeof e.sourceId!=='string'||!e.sourceId.trim()){exceptions.push({id,reason:'invalid-source-id'});continue;}
+   if(typeof e.unit!=='string'||!e.unit.trim()){exceptions.push({id,reason:'invalid-unit'});continue;}
+   const sourceId=e.sourceId.trim(),sourceKey=JSON.stringify([e.kind,sourceId]);
    if(sources.has(sourceKey)){exceptions.push({id,reason:'duplicate-source'});continue;}
    sources.add(sourceKey);
    included.push(Object.freeze({id,kind:e.kind,quantity:e.quantity,unit:str(e.unit,'unit'),sourceId}));
