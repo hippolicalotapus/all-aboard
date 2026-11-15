@@ -1,0 +1,46 @@
+'use strict';
+const assert=require('node:assert/strict');
+const flha=require('../source/flha-workflow');
+const reports=require('../source/flha-foreman-report');
+const scope={companyId:'co',projectId:'site',periodId:'shift',date:'2026-11-14',workerIds:['worker','second']};
+const employee={id:'worker',role:'employee',companyId:'co',projectId:'site'};
+const foreman={id:'boss',role:'foreman',companyId:'co',projectId:'site',crewWorkerIds:['worker','second']};
+let state=flha.start({...scope,workerId:'worker'}),counter=0;
+function act(actor,type,details={}){state=flha.apply(state,actor,{type,actionId:'report-action-'+(++counter),expectedRevision:state.revision,...details});}
+function view(){return reports.build([state],scope,foreman);}
+act(employee,'add-hazard',{hazardId:'ice',task:'Load truck',description:'Ice beside loading point',severity:4,likelihood:3,at:'2026-11-14T12:00:00Z'});
+act(employee,'set-controls',{hazardId:'ice',controls:['Establish safe walking route'],residualSeverity:2,residualLikelihood:2,at:'2026-11-14T12:01:00Z'});
+let output=view();
+assert.equal(output.counts.draft,1);
+assert.equal(output.counts.missing,1);
+assert.equal(output.attention.length,2);
+act(employee,'worker-review',{reviewedConditions:true});
+output=view();
+assert.equal(output.counts['review-pending'],1);
+assert.equal(output.entries[0].requiresForemanReview,true);
+act(foreman,'foreman-approve',{reviewedControls:true});
+output=view();
+assert.equal(output.counts['foreman-approved'],1);
+assert.equal(output.attention.length,1); // Unsubmitted second worker still needs attention.
+assert.equal(output.workAuthorized,false);
+assert.equal(output.approved,false);
+act(employee,'no-changes',{reviewedConditions:true});
+assert.equal(view().counts['foreman-approved'],1);
+act(employee,'add-hazard',{hazardId:'traffic',task:'Manage traffic',description:'Reversing vehicle',severity:4,likelihood:4,at:'2026-11-14T13:00:00Z'});
+output=view();
+assert.equal(output.counts.draft,1);
+assert.equal(output.entries[0].needsAttention,true);
+assert.equal(output.entries[0].materialRevision,state.materialRevision);
+assert.throws(()=>reports.build([state],scope,{...foreman,crewWorkerIds:['second']}),/Unassigned/);
+assert.throws(()=>reports.build([state],scope,{...foreman,companyId:'other'}),/access denied/);
+assert.throws(()=>reports.build([state],scope,{...foreman,role:'employee'}),/access denied/);
+assert.throws(()=>reports.build([state,state],scope,foreman),/Duplicate worker/);
+assert.throws(()=>reports.build([{...state,context:{...state.context,companyId:'other'}}],scope,foreman),/scope mismatch/);
+assert.throws(()=>reports.build([{...state,context:{...state.context,periodId:'other'}}],scope,foreman),/scope mismatch/);
+assert.throws(()=>reports.build([state],{...scope,date:'2026-02-30'},foreman),/date/);
+assert.throws(()=>reports.build([state],{...scope,workerIds:['worker','worker']},foreman),/Duplicate assigned/);
+assert.throws(()=>reports.build([{...state,events:[{...state.events[0],sequence:42},...state.events.slice(1)]}],scope,foreman),/audit/);
+const superintendent={id:'super',role:'superintendent',companyId:'co',projectIds:['site']};
+assert.equal(reports.build([state],scope,superintendent).status,'draft-safety-report');
+assert.throws(()=>reports.build([state],scope,{...superintendent,projectIds:['other']}),/access denied/);
+console.log('PASS: actual FLHA model to foreman reporting integration, review changes, role isolation, missing workers, stale approvals and fail-closed guards');
