@@ -9,7 +9,8 @@
   const seen=new Set(),sources=new Set(),included=[],exceptions=[];
   for(const e of entries){
    if(!e||e.companyId!==companyId||e.projectId!==projectId||e.date!==date)continue;
-   const id=str(e.id,'record id');
+   if(typeof e.id!=='string'||!e.id.trim()){exceptions.push({id:null,reason:'invalid-record-id'});continue;}
+   const id=e.id.trim();
    if(seen.has(id)){exceptions.push({id,reason:'duplicate-record'});continue;}seen.add(id);
    if(!kinds.has(e.kind)){exceptions.push({id,reason:'unsupported-kind'});continue;}
    if(e.source==='flha-plan'||e.status!=='verified'){exceptions.push({id,reason:'not-verified-actual'});continue;}
