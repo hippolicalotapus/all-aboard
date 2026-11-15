@@ -38,7 +38,7 @@
   return Object.freeze({context:state.context,entries:Object.freeze([...entries]),report,events:Object.freeze([...state.events,event]),revision:state.revision+1});
  }
  function verifyAudit(state){
-  check(state);let expected=1;const ids=new Set();for(const e of state.events){if(!e||e.sequence!==expected++||typeof e.actionId!=='string'||ids.has(e.actionId)||e.companyId!==state.context.companyId||e.projectId!==state.context.projectId||!['exclude','correct','approve','reopen'].includes(e.type))throw Error('Audit integrity failed');ids.add(e.actionId);}if(state.revision!==state.events.length+1)throw Error('Audit revision mismatch');return true;
+  check(state);let expected=1;const ids=new Set();for(const e of state.events){if(!e||e.sequence!==expected++||typeof e.actionId!=='string'||typeof e.actorId!=='string'||!e.actorId.trim()||ids.has(e.actionId)||e.companyId!==state.context.companyId||e.projectId!==state.context.projectId||!['exclude','correct','approve','reopen'].includes(e.type))throw Error('Audit integrity failed');ids.add(e.actionId);}if(state.revision!==state.events.length+1)throw Error('Audit revision mismatch');return true;
  }
  function view(state,actor){check(state);if(!actor||actor.companyId!==state.context.companyId)throw Error('Company access denied');
   const permitted=actor.role==='foreman'&&actor.projectId===state.context.projectId||['superintendent','accounting','payroll','management'].includes(actor.role)&&Array.isArray(actor.projectIds)&&actor.projectIds.includes(state.context.projectId);
