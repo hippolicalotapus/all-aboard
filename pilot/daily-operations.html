@@ -10,7 +10,7 @@ let entries=[
 {id:'equip-1',...context,kind:'equipment',quantity:6,unit:'hours',sourceId:'equipment-1',status:'verified',source:'equipment-log'},
 {id:'plan-1',...context,kind:'material',quantity:30,unit:'units',sourceId:'flha-1',status:'planned',source:'flha-plan'}];
 let state=DailyReportLifecycle.start(entries,context),actionCounter=0;
-function apply(type,recordId,quantity,reason){state=DailyReportLifecycle.action(state,actor(),{type,recordId,quantity,reason:type==='exclude'?'Fictional planned item is not actual work':type==='reopen'?'Fictional verified correction requested':reason,expectedRevision:state.revision,actionId:'pilot-'+(++actionCounter)});render();}
+function apply(type,recordId,quantity,reason){state=DailyReportLifecycle.action(state,actor(),{type,recordId,quantity,reason:type==='exclude'?'Fictional planned item is not actual work':reason,expectedRevision:state.revision,actionId:'pilot-'+(++actionCounter)});render();}
 const role=document.getElementById('role'),main=document.getElementById('view');
 function el(tag,text){const n=document.createElement(tag);n.textContent=text;return n;}
 function button(text,action){const n=el('button',text);n.type='button';n.addEventListener('click',action);return n;}
@@ -44,7 +44,13 @@ function render(){
  if(!v.exceptions.length)e.append(el('p','No unresolved exceptions.'));
  for(const item of v.exceptions){e.append(el('p',item.id+': '+({'not-verified-actual':'Planned or unverified entry — excluded from actuals','duplicate-record':'Repeated record — review before approval','duplicate-source':'Source already counted — review before approval','unsupported-kind':'Unsupported entry type — review before approval','invalid-quantity':'Quantity needs correction'}[item.reason]||'Source needs review')));if(v.role==='foreman'&&v.status==='draft')e.append(button('Dismiss fictional '+item.id,()=>{try{apply('exclude',item.id);}catch(err){main.append(el('p',err.message));}}));}
  main.append(e);
- if(v.role==='foreman'&&v.status==='foreman-approved')main.append(button('Reopen approved report',()=>{try{apply('reopen');}catch(err){main.append(el('p',err.message));}}));
+ if(v.role==='foreman'&&v.status==='foreman-approved'){
+  const reopen=el('section','');reopen.className='correction';
+  const reason=el('input','');reason.id='reopen-reason';reason.type='text';reason.value='';
+  const label=el('label','Reason for reopening (at least 5 characters)');label.htmlFor=reason.id;
+  const message=el('p','');message.id='reopen-status';message.setAttribute('role','status');reason.setAttribute('aria-describedby',message.id);
+  reopen.append(label,reason,button('Reopen approved report',()=>{try{apply('reopen',undefined,undefined,reason.value);}catch(err){message.textContent=err.message;reason.focus();}}),message);main.append(reopen);
+ }
  if(v.role==='foreman'&&v.status==='draft'){const approve=button('Approve daily report',()=>{try{apply('approve');}catch(err){main.append(el('p',err.message));}});approve.disabled=!v.canApprove;approve.className='primary';main.append(approve);}
  const audit=el('section','');audit.className='history';audit.append(el('h2','Fictional report history'));if(!state.events.length)audit.append(el('p','No review actions yet. Changes will appear here.'));for(const event of state.events)audit.append(el('p',event.sequence+'. '+event.type+' by '+event.actorId+(event.recordId?' for '+event.recordId:'')+(event.type==='correct'?' — '+event.oldQuantity+' → '+event.newQuantity:'')+(event.reason?' — '+event.reason:'')));main.append(audit);
  if(v.role!=='foreman')main.append(el('p','Read-only operational overview; no approval authority.'));
