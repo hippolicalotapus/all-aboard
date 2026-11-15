@@ -9,9 +9,13 @@ vm.runInNewContext(inline,{document,DailyOperationsReport:report,DailyOperations
 function all(n){return [n,...(n.children||[]).flatMap(all)]}
 function has(t){return all(main).some(x=>String(x.textContent).includes(t))}
 function press(t){const b=all(main).find(x=>x.tag==='button'&&x.textContent===t);assert(b,'Missing '+t);b.click();}
-assert(has('Items requiring attention'));assert(has('not-verified-actual'));
+assert(has('Items requiring attention'));assert(has('Planned or unverified entry — excluded from actuals'));assert(has('No review actions yet.'));
+const approval=()=>all(main).find(x=>x.tag==='button'&&x.textContent==='Approve daily report');
+assert.equal(approval().disabled,true,'Approval must be disabled while exceptions need review');
+assert(has('Review 1 item before approval'));
+
 press('Approve daily report');assert(has('Unresolved exceptions'));
-press('Dismiss fictional plan-1');press('Approve daily report');assert(has('foreman-approved'));assert(has('Fictional report history'));assert(has('exclude by fictional-foreman'));assert(has('approve by fictional-foreman'));
+press('Dismiss fictional plan-1');assert.equal(approval().disabled,false,'Resolved report must enable approval');assert(has('Ready for foreman review'));press('Approve daily report');assert(has('foreman-approved'));assert(has('Fictional report history'));assert(has('exclude by fictional-foreman'));assert(has('approve by fictional-foreman'));
 role.value='foreman';role.change();press('Reopen approved report');assert(has('Status: draft'));assert(has('reopen by fictional-foreman'));press('Approve daily report');assert(has('foreman-approved'));
 role.value='superintendent';role.change();assert(has('foreman-approved'));assert(has('Fictional report history'));assert(!all(main).some(x=>x.tag==='button'));
 role.value='accounting';role.change();assert(has('120 metres'));assert(!all(main).some(x=>x.tag==='button'));
