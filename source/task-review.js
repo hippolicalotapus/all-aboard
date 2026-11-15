@@ -43,6 +43,19 @@ const TaskReview = (() => {
   const summary=summarize(checked,model);
   return Object.freeze({format:'onboarding-fictional-review-report-v1',fictionalDataOnly:true,employerApproval:false,summary,items:checked.records.map(({kind,role,site,taskId,status,note,evidenceUrl})=>Object.freeze({kind,role,site,taskId,status,note,evidenceUrl,needsAttention:status==='changes-requested'&&!evidenceUrl}))});
  }
- return Object.freeze({FORMAT,KEY,STATUSES,validate,empty,connect,summarize,reviewAttention,generateReviewReport});
+ function formatReviewReport(value,model,scope){
+  if(!scope)throw Error('Unknown workflow scope');
+  const tasks=model.build(scope.kind,scope.role,scope.site);
+  const checked=validate(value,model),records=checked.records.filter(r=>r.kind===scope.kind&&r.role===scope.role&&r.site===scope.site);
+  const labels={onboarding:'Onboarding',reboarding:'Reboarding',transfer:'Transfer',offboarding:'Offboarding',field:'Field',office:'Office',remote:'Remote',jobsite:'Jobsite'};
+  const states={pending:'Pending review',reviewed:'Reviewed (not employer approval)','changes-requested':'Changes requested'};
+  const lines=['Checklist review draft',[scope.kind,scope.role,scope.site].map(v=>labels[v]).join(' · '),'Fictional data only. Not an employer approval.','Review status is separate from checklist acknowledgement.','',records.length+' of '+tasks.length+' tasks have a saved review.'];
+  for(const [index,task] of tasks.entries()){
+   const record=records.find(r=>r.taskId===task.id);
+   lines.push('',(index+1)+'. '+task.label+' — '+task.owner,'Review: '+(record?states[record.status]:'Not requested'),'Note: '+(record&&record.note||'No review note.'),'Evidence: '+(record&&record.evidenceUrl||'No evidence link.'));
+  }
+  return lines.join('\n');
+ }
+ return Object.freeze({FORMAT,KEY,STATUSES,validate,empty,connect,summarize,reviewAttention,generateReviewReport,formatReviewReport});
 })();
 if(typeof module!=='undefined'&&module.exports)module.exports=TaskReview;
