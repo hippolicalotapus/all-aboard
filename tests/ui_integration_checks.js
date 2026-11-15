@@ -16,16 +16,16 @@ class Element {
  async dispatch(name){for(const fn of this.listeners[name]||[])await fn({target:this,preventDefault(){}})}
 }
 function boot(data=new Map(),fault={}){
- const elements=new Map();
+ const elements=new Map(),copied=[];
  for(const match of html.matchAll(/<([a-z][\w-]*)\b([^>]*\bid="([^"]+)"[^>]*)>/gi)){
   const [,tag,attrs,id]=match;assert(!elements.has(id),'duplicate DOM id: '+id);
   const e=new Element(tag);e.value=attrs.match(/\bvalue="([^"]*)"/)?.[1]||'';e.disabled=/\bdisabled\b/.test(attrs);e.hidden=/\bhidden\b/.test(attrs);
   if(tag==='select'){const options=html.slice(match.index+match[0].length).split('</select>')[0];e.value=options.match(/<option[^>]*value="([^"]*)"/)?.[1]||''}
   elements.set(id,e);
  }
- const context={console,Blob,URL,setTimeout(){},clearTimeout(){},navigator:{},confirm:()=>!fault.cancel,localStorage:{getItem(k){return data.get(k)??null},setItem(k,v){if(fault.quota)throw Error('full');data.set(k,v)},removeItem(k){data.delete(k)}},document:{getElementById:id=>{assert(elements.has(id),'missing element '+id);return elements.get(id)},createElement:tag=>new Element(tag),createTextNode:text=>({textContent:text}),body:new Element('body')}};
+ const context={console,Blob,URL,setTimeout(){},clearTimeout(){},navigator:fault.clipboardUnavailable?{}:{clipboard:{async writeText(text){if(fault.clipboardDenied)throw Error('denied');copied.push(text)}}},confirm:()=>!fault.cancel,localStorage:{getItem(k){return data.get(k)??null},setItem(k,v){if(fault.quota)throw Error('full');data.set(k,v)},removeItem(k){data.delete(k)}},document:{getElementById:id=>{assert(elements.has(id),'missing element '+id);return elements.get(id)},createElement:tag=>new Element(tag),createTextNode:text=>({textContent:text}),body:new Element('body')}};
  context.window=context;vm.runInNewContext(script,context,{timeout:2000});
- return {el:id=>elements.get(id),data,fault};
+ return {el:id=>elements.get(id),data,fault,copied};
 }
 function firstTask(ui){return ui.el('workflowTasks').children[0].children[0]}
 let count=0;async function check(name,fn){await fn();count++;console.log('PASS:',name)}
@@ -56,6 +56,15 @@ let count=0;async function check(name,fn){await fn();count++;console.log('PASS:'
   await ui.el('taskReviewReport').click();assert.match(ui.el('taskReviewReportOutput').textContent,/Changed saved note/);
   ui.el('workflowKind').value='offboarding';await ui.el('workflowKind').dispatch('change');assert.doesNotMatch(ui.el('taskReviewReportOutput').textContent,/Changed saved note/);
   await ui.el('taskReviewReport').click();text=ui.el('taskReviewReportOutput').textContent;assert.match(text,/Offboarding/);assert.doesNotMatch(text,/Changed saved note/);
+ });
+ await check('copy uses the visible draft and blocks stale or absent reports',async()=>{
+  ui=boot(new Map());assert(ui.el('taskReviewCopy').disabled);await ui.el('taskReviewCopy').click();assert.equal(ui.copied.length,0);
+  await ui.el('taskReviewReport').click();assert(!ui.el('taskReviewCopy').disabled);const draft=ui.el('taskReviewReportOutput').textContent;await ui.el('taskReviewCopy').click();assert.deepEqual(ui.copied,[draft]);assert.match(ui.el('taskReviewCopyStatus').textContent,/copied/);
+  ui.el('workflowRole').value='field';await ui.el('workflowRole').dispatch('change');assert(ui.el('taskReviewCopy').disabled);await ui.el('taskReviewCopy').click();assert.equal(ui.copied.length,1);
+ });
+ await check('clipboard refusal keeps the readable draft and offers manual copy',async()=>{
+  ui=boot(new Map(),{clipboardDenied:true});await ui.el('taskReviewReport').click();const draft=ui.el('taskReviewReportOutput').textContent;await ui.el('taskReviewCopy').click();assert.match(ui.el('taskReviewCopyStatus').textContent,/Select the report text/);assert.equal(ui.el('taskReviewReportOutput').textContent,draft);assert.deepEqual(ui.copied,[]);
+  ui=boot(new Map(),{clipboardUnavailable:true});await ui.el('taskReviewReport').click();await ui.el('taskReviewCopy').click();assert.match(ui.el('taskReviewCopyStatus').textContent,/Select the report text/);
  });
  console.log('PASS:',count,'full-script DOM integration scenarios (not browser E2E)');
 })().catch(error=>{console.error(error);process.exitCode=1});
