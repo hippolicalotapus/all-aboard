@@ -30,3 +30,9 @@ for(const [field,reason] of [['sourceId','invalid-source-id'],['unit','invalid-u
  assert.throws(()=>m.approve(result,{role:'foreman',companyId:'a',projectId:'p',id:'f'}),/Unresolved/);
 }
 console.log('PASS: malformed report source and unit are flagged for foreman review');
+
+const missingId=m.build([base,{...base,id:null,sourceId:'another'}],ctx);
+assert.equal(missingId.entries.length,1);
+assert.deepEqual(missingId.exceptions,[{id:null,reason:'invalid-record-id'}]);
+assert.throws(()=>m.approve(missingId,{role:'foreman',companyId:'a',projectId:'p',id:'f'}),/Unresolved/);
+console.log('PASS: missing record IDs are review exceptions');
