@@ -20,3 +20,15 @@ assert.throws(()=>m.approve(duplicateSource,{role:'foreman',companyId:'a',projec
 const distinctKind=m.build([base,{...base,id:'production-1',kind:'production',unit:'units'}],ctx);
 assert.equal(distinctKind.entries.length,2);
 console.log('PASS: duplicate source references cannot double count actuals or pass approval');
+
+
+for(const id of [' hours-2 ','bad/id','bad\nnewline','x'.repeat(65),''])assert.throws(()=>m.build([{...base,id}],ctx),/Invalid record id/);
+for(const sourceId of [' verified-time-1 ','bad/id','x'.repeat(65),''])assert.throws(()=>m.build([{...base,sourceId}],ctx),/Invalid source id/);
+for(const date of ['2026-02-30','2026-11-31','2026-1-3','not-a-date'])assert.throws(()=>m.build([{...base,date}],{...ctx,date}),/Invalid date/);
+const generated=m.build([base,{...base,id:'production-2',kind:'production',quantity:60,unit:'metres',sourceId:'field-entry-2'},{...base,id:'other-day',date:'2026-11-12'},{...base,id:'unverified-1',status:'pending'}],ctx);
+assert.deepEqual(generated.entries.map(x=>x.id),['hours-1','production-2']);
+assert.deepEqual(generated.exceptions,[{id:'unverified-1',reason:'not-verified-actual'}]);
+assert.equal(generated.status,'draft');
+assert.equal(generated.requiresForemanApproval,true);
+assert.throws(()=>m.approve(generated,{role:'foreman',companyId:'a',projectId:'p',id:'f'}),/Unresolved/);
+console.log('PASS: malformed identifiers, impossible dates, daily report scoping and human review gate');
