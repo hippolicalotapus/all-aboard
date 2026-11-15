@@ -9,7 +9,7 @@
   authorized(state,actor,['foreman']);
   if(typeof command.actionId!=='string'||!command.actionId.trim())throw Error('Action ID required');
   const prior=state.events.find(e=>e.actionId===command.actionId);
-  if(prior){if(prior.type!==command.type||prior.recordId!==(command.recordId||null)||prior.newQuantity!==(command.type==='correct'?command.quantity:null)||prior.reason!==(command.reason||null))throw Error('Action ID conflict');return state;}
+  if(prior){if(prior.actorId!==actor.id||prior.type!==command.type||prior.recordId!==(command.recordId||null)||prior.newQuantity!==(command.type==='correct'?command.quantity:null)||prior.reason!==(command.reason||null))throw Error('Action ID conflict');return state;}
   if(!Number.isSafeInteger(command.expectedRevision)||command.expectedRevision!==state.revision)throw Error('Report revision conflict');
   if(command.type==='reopen'){
    if(state.report.status!=='foreman-approved')throw Error('Only approved reports can be reopened');
