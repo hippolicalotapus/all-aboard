@@ -20,3 +20,13 @@ assert.throws(()=>m.approve(duplicateSource,{role:'foreman',companyId:'a',projec
 const distinctKind=m.build([base,{...base,id:'production-1',kind:'production',unit:'units'}],ctx);
 assert.equal(distinctKind.entries.length,2);
 console.log('PASS: duplicate source references cannot double count actuals or pass approval');
+
+// Malformed verified source data must be reviewable rather than crashing a report.
+for(const [field,reason] of [['sourceId','invalid-source-id'],['unit','invalid-unit']]){
+ const invalid={...base,id:'malformed-'+field,[field]:'   '};
+ const result=m.build([base,invalid],ctx);
+ assert.equal(result.entries.length,1);
+ assert.deepEqual(result.exceptions,[{id:invalid.id,reason}]);
+ assert.throws(()=>m.approve(result,{role:'foreman',companyId:'a',projectId:'p',id:'f'}),/Unresolved/);
+}
+console.log('PASS: malformed report source and unit are flagged for foreman review');
