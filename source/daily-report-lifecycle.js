@@ -7,6 +7,7 @@
  function action(state,actor,command){
   check(state);if(!command||!['exclude','correct','approve','reopen'].includes(command.type))throw Error('Unsupported action');
   authorized(state,actor,['foreman']);
+  if(typeof actor.id!=='string'||!actor.id.trim())throw Error('Actor identity required');
   if(typeof command.actionId!=='string'||!command.actionId.trim())throw Error('Action ID required');
   const prior=state.events.find(e=>e.actionId===command.actionId);
   if(prior){if(prior.actorId!==actor.id||prior.type!==command.type||prior.recordId!==(command.recordId||null)||prior.newQuantity!==(command.type==='correct'?command.quantity:null)||prior.reason!==(command.reason||null))throw Error('Action ID conflict');return state;}
