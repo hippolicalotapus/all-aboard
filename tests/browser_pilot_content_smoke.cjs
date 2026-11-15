@@ -5,7 +5,7 @@ const root=path.resolve(__dirname,'..');const wait=ms=>new Promise(r=>setTimeout
  const server=http.createServer((req,res)=>{const p=path.resolve(root,'.'+(req.url||'/'));if(!p.startsWith(root+path.sep)||!fs.existsSync(p)){res.writeHead(404);res.end('not found');return;}res.setHeader('Content-Type',p.endsWith('.js')?'text/javascript':'text/html');res.end(fs.readFileSync(p))});
  await new Promise(ok=>server.listen(0,'127.0.0.1',ok));
  const temp=fs.mkdtempSync(path.join(os.tmpdir(),'aboard-browser-'));
- const browser=spawn('/usr/bin/chromium',['--headless=new','--no-sandbox','--disable-dev-shm-usage','--remote-allow-origins=*','--remote-debugging-port=0','--user-data-dir='+temp,'about:blank'],{stdio:'ignore'});
+ const browser=spawn(process.env.CHROMIUM_BIN||process.env.WORKFLOW_CHROMIUM_PATH||'/usr/bin/chromium',['--headless=new','--no-sandbox','--disable-dev-shm-usage','--remote-allow-origins=*','--remote-debugging-port=0','--user-data-dir='+temp,'about:blank'],{stdio:'ignore'});
  try{
   let port;for(let i=0;i<100;i++){const p=path.join(temp,'DevToolsActivePort');if(fs.existsSync(p)){port=Number(fs.readFileSync(p,'utf8').split('\n')[0]);break;}await wait(100)}assert(port,'Chromium debug port unavailable');
   const tabs=await(await fetch('http://localhost:'+port+'/json')).json();const ws=new WebSocket(tabs.find(t=>t.type==='page').webSocketDebuggerUrl);await new Promise(ok=>ws.addEventListener('open',ok,{once:true}));
