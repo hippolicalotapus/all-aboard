@@ -2,8 +2,8 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
 const html=fs.readFileSync(path.join(__dirname,'../pilot/daily-operations.html'),'utf8');
 const inline=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)].map(x=>x[1]).find(Boolean);assert(inline);
-function element(tag){return {tag,children:[],value:'foreman',textContent:'',append(...xs){this.children.push(...xs)},replaceChildren(...xs){this.children=xs},addEventListener(n,f){this[n]=f}}}
-const main=element('main'),role=element('select');const document={createElement:element,getElementById:id=>id==='view'?main:role};
+function element(tag){return {tag,children:[],value:'foreman',textContent:'',focus(){document.activeElement=this},setAttribute(n,v){this[n]=v},append(...xs){this.children.push(...xs)},replaceChildren(...xs){this.children=xs},addEventListener(n,f){this[n]=f}}}
+const main=element('main'),role=element('select');const document={createElement:element,getElementById:id=>id==='view'?main:id==='role'?role:all(main).find(n=>n.id===id)};
 const report=require('../source/daily-operations-report'),pilot=require('../source/daily-operations-pilot');
 vm.runInNewContext(inline,{document,DailyOperationsReport:report,DailyOperationsPilot:pilot,DailyReportLifecycle:require('../source/daily-report-lifecycle')},{timeout:2000});
 function all(n){return [n,...(n.children||[]).flatMap(all)]}
@@ -14,10 +14,16 @@ const approval=()=>all(main).find(x=>x.tag==='button'&&x.textContent==='Approve 
 assert.equal(approval().disabled,true,'Approval must be disabled while exceptions need review');
 assert(has('Review 1 item before approval'));
 
+const field=id=>all(main).find(n=>n.id===id);
+assert(field('correct-time-1'),'Foreman must have a correction control');
+field('quantity-time-1').value='';field('reason-time-1').value='Fictional shift correction';press('Save time correction');assert(has('Enter a valid non-negative quantity'));assert(has('time: 8 hours'));
+field('quantity-time-1').value='7.5';field('reason-time-1').value='short';press('Save time correction');assert(has('time: 7.5 hours'));assert(has('8 → 7.5'));assert(has('correct by fictional-foreman'));assert.equal(document.activeElement.id,'correct-time-1');
+field('quantity-time-1').value='9';field('reason-time-1').value='';press('Save time correction');assert(has('Give a reason of 5 to 500 characters'));assert(has('time: 7.5 hours'));
+press('Cancel time correction');assert.equal(field('quantity-time-1').value,'7.5');assert.equal(field('reason-time-1').value,'');
 press('Approve daily report');assert(has('Unresolved exceptions'));
-press('Dismiss fictional plan-1');assert.equal(approval().disabled,false,'Resolved report must enable approval');assert(has('Ready for foreman review'));press('Approve daily report');assert(has('foreman-approved'));assert(has('Fictional report history'));assert(has('exclude by fictional-foreman'));assert(has('approve by fictional-foreman'));
+press('Dismiss fictional plan-1');assert.equal(approval().disabled,false,'Resolved report must enable approval');assert(has('Ready for foreman review'));press('Approve daily report');assert(has('foreman-approved'));assert(!field('correct-time-1'),'Approved report must not expose corrections');assert(has('Fictional report history'));assert(has('exclude by fictional-foreman'));assert(has('approve by fictional-foreman'));
 role.value='foreman';role.change();press('Reopen approved report');assert(has('Status: draft'));assert(has('reopen by fictional-foreman'));press('Approve daily report');assert(has('foreman-approved'));
-role.value='superintendent';role.change();assert(has('foreman-approved'));assert(has('Fictional report history'));assert(!all(main).some(x=>x.tag==='button'));
+role.value='superintendent';role.change();assert(has('foreman-approved'));assert(!field('correct-time-1'),'Approved report must not expose corrections');assert(has('Fictional report history'));assert(!all(main).some(x=>x.tag==='button'));
 role.value='accounting';role.change();assert(has('120 metres'));assert(!all(main).some(x=>x.tag==='button'));
 role.value='employee';role.change();assert(has('Access restricted'));assert(!has('120 metres'));
 const ctx={companyId:'demo',projectId:'project-1',date:'2026-11-13'};
