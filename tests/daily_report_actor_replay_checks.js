@@ -1,0 +1,12 @@
+'use strict';
+const assert=require('node:assert/strict');
+const m=require('../source/daily-report-lifecycle');
+const context={companyId:'demo',projectId:'site',date:'2026-11-15'};
+const f1={id:'foreman-one',role:'foreman',companyId:'demo',projectId:'site'};
+const f2={...f1,id:'foreman-two'};
+const entry={...context,id:'time1',kind:'time',quantity:8,unit:'hours',status:'verified',sourceId:'clock1'};
+let s=m.start([entry],context);
+s=m.action(s,f1,{type:'approve',actionId:'approve-once',expectedRevision:1});
+assert.throws(()=>m.action(s,f2,{type:'approve',actionId:'approve-once',expectedRevision:1}),/Action ID conflict/,'A second foreman may not reuse another foreman\'s action id');
+assert.strictEqual(m.action(s,f1,{type:'approve',actionId:'approve-once',expectedRevision:1}),s);
+console.log('PASS: action replay is bound to its original foreman');
