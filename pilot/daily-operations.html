@@ -3,13 +3,13 @@
 .correction{padding:4px 0 12px}.correction summary{cursor:pointer;min-height:44px;color:#176751;font-weight:700;padding:10px 0}.correction label{display:block;margin:10px 0 5px}.correction input{font:inherit;font-size:16px;width:100%;min-height:48px;padding:10px;border:1px solid #9bafb9;border-radius:8px}.correction input:focus-visible{outline:3px solid #087d68;outline-offset:3px}.correction p{font-size:.85rem;color:#783b28}@media print{.correction{display:none}}
 </style></head><body><header class="workspace-head"><p class="eyebrow">Workforce operations · Test workspace</p><h1>Daily operations</h1><p class="intro">Your field entries, assembled into one daily report. Review the items that need attention, then confirm the draft.</p><p class="notice">Fictional pilot · In-memory demonstration only. No payroll, costs, production records or safety approvals are submitted.</p></header><label for="role">View as</label><select id="role"><option value="foreman">Foreman</option><option value="superintendent">Superintendent</option><option value="accounting">Accounting</option><option value="employee">Employee (restricted)</option></select><main id="view" aria-live="polite"></main><script src="../source/daily-operations-report.js"></script><script src="../source/daily-operations-pilot.js"></script><script src="../source/daily-report-lifecycle.js"></script><script src="../source/daily-report-automation.js"></script><script>
 'use strict';
-const context=// Enter each fictional fact once in its originating register; assemble the draft automatically.
+const context={companyId:'demo',projectId:'project-1',date:'2026-11-13'};
+// Enter each fictional fact once in its originating register; assemble the draft automatically.
 const sources={
 timeEntries:[{id:'time-1',...context,quantity:8,unit:'hours',sourceId:'timesheet-1',status:'verified'}],
 productionEntries:[{id:'prod-1',...context,quantity:120,unit:'metres',sourceId:'field-1',status:'verified'}],
 equipmentEntries:[{id:'equip-1',...context,quantity:6,unit:'hours',sourceId:'equipment-1',status:'verified'}],
 materialEntries:[{id:'plan-1',...context,quantity:30,unit:'units',sourceId:'flha-1',status:'planned',source:'flha-plan'}]};
-s',sourceId:'flha-1',status:'planned',source:'flha-plan'}];
 let state=DailyReportAutomation.start(sources,context),actionCounter=0;
 function apply(type,recordId,quantity,reason){state=DailyReportLifecycle.action(state,actor(),{type,recordId,quantity,reason:type==='exclude'?'Fictional planned item is not actual work':type==='reopen'?'Fictional verified correction requested':reason,expectedRevision:state.revision,actionId:'pilot-'+(++actionCounter)});render();}
 const role=document.getElementById('role'),main=document.getElementById('view');
