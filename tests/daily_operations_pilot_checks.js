@@ -5,7 +5,7 @@ const inline=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)].map
 function element(tag){return {tag,children:[],value:'foreman',textContent:'',focus(){document.activeElement=this},setAttribute(n,v){this[n]=v},append(...xs){this.children.push(...xs)},replaceChildren(...xs){this.children=xs},addEventListener(n,f){this[n]=f}}}
 const main=element('main'),role=element('select');const document={createElement:element,getElementById:id=>id==='view'?main:id==='role'?role:all(main).find(n=>n.id===id)};
 const report=require('../source/daily-operations-report'),pilot=require('../source/daily-operations-pilot');
-vm.runInNewContext(inline,{document,DailyOperationsReport:report,DailyOperationsPilot:pilot,DailyReportLifecycle:require('../source/daily-report-lifecycle')},{timeout:2000});
+vm.runInNewContext(inline,{document,DailyOperationsReport:report,DailyOperationsPilot:pilot,DailyReportLifecycle:require('../source/daily-report-lifecycle'),DailyReportAutomation:require('../source/daily-report-automation')},{timeout:2000});
 function all(n){return [n,...(n.children||[]).flatMap(all)]}
 function has(t){return all(main).some(x=>String(x.textContent).includes(t))}
 function press(t){const b=all(main).find(x=>x.tag==='button'&&x.textContent===t);assert(b,'Missing '+t);b.click();}
