@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>All Aboard · Foreman FLHA Review · Fictional Pilot</title>
+<style>
+:root{font:16px/1.5 system-ui,sans-serif;color:#173244;background:#edf3f5}*{box-sizing:border-box}
+body{max-width:1040px;margin:auto;padding:24px}header{margin-bottom:24px}h1{font-size:clamp(1.7rem,4vw,2.5rem);line-height:1.2;margin:.3em 0}h2{font-size:1.18rem;margin:0 0 12px}.muted{color:#516673}.warning{border-left:5px solid #9e6428;background:#fff6e6;padding:15px;margin:16px 0}.layout{display:grid;grid-template-columns:1fr 1fr;gap:16px}section{background:white;border:1px solid #cad9df;border-radius:14px;padding:20px}button,input,select{font:inherit;min-height:44px;border-radius:8px;border:1px solid #879ca8}button{padding:8px 13px;background:#fff;color:#173244;cursor:pointer}button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #137863;outline-offset:2px}button:disabled{opacity:.55;cursor:not-allowed}.primary{background:#135e50;color:white;border-color:#135e50}input,select{padding:8px;width:100%;max-width:400px}label{display:block;font-weight:600;margin:9px 0 4px}.card{border-top:1px solid #e3ebef;padding:14px 0}.card:first-of-type{border-top:0}.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.pill{background:#f1e6d3;border-radius:20px;padding:3px 9px;font-weight:600;font-size:.85rem}.approved{background:#dceee7}.error{color:#943522}.success{color:#176b51}#alerts{min-height:1.5em}small{display:block}.wide{grid-column:1/-1}@media(max-width:740px){body{padding:15px}.layout{display:block}section{margin-bottom:15px}}@media print{.actions,button,input,select,.warning{display:none}body{background:white}section{break-inside:avoid}}
+</style></head><body>
+<header><p class="muted">All Aboard · Fictional in-memory development workspace</p><h1>Foreman FLHA review</h1><p class="muted">Crew assessment queue, exact-revision acknowledgement and documented returns for correction.</p><p class="warning"><strong>Not a work permit.</strong> Fictional training data only. Approving an FLHA here does not authorize work, verify a site hazard assessment or submit a production safety record.</p></header>
+<div class="layout"><section><h2>Review scope</h2><p id="scope"></p><label for="filter">Filter crew</label><select id="filter"><option value="all">All workers</option><option value="attention">Needs attention</option><option value="review-pending">Awaiting foreman review</option><option value="returned">Returned for correction</option><option value="foreman-approved">Reviewed revision</option></select><p id="counts" aria-live="polite"></p><p id="alerts" role="status" aria-live="polite"></p></section>
+<section><h2>Demonstration controls</h2><p class="muted">Worker submissions are simulated with fictional identities. The foreman must still review and act explicitly.</p><div class="actions"><button id="seed">Simulate worker submission</button><button id="change">Simulate changed hazard</button><button id="reset">Reset fictional records</button></div><p id="hint" class="muted"></p></section>
+<section class="wide"><h2>Crew review queue</h2><div id="crew"></div></section></div>
+<script src="../source/flha-workflow.js"></script><script src="../source/flha-foreman-report.js"></script><script>
+'use strict';
+(function(){
+ const model=globalThis.FLHAWorkflow,reporter=globalThis.FLHAForemanReport,doc=document;
+ const scope={companyId:'fictional-co',projectId:'demo-site',periodId:'shift-1',date:'2026-11-15',workerIds:['worker-1','worker-2','worker-3']};
+ const foreman={id:'foreman-1',role:'foreman',companyId:scope.companyId,projectId:scope.projectId,crewWorkerIds:[...scope.workerIds]};
+ const names={'worker-1':'Alex (fictional)','worker-2':'Sam (fictional)','worker-3':'Jordan (fictional)'};
+ const byId=id=>doc.getElementById(id);
+ const node=(tag,text)=>{const e=doc.createElement(tag);if(text!==undefined)e.textContent=text;return e};
+ let states=new Map(),serial=0;
+ const actor=id=>({id,role:'employee',companyId:scope.companyId,projectId:scope.projectId});
+ const mutate=(id,person,type,extra={})=>{const original=states.get(id);if(!original)throw Error('No assessment submitted');const next=model.apply(original,person,{type,actionId:'pilot-'+(++serial),expectedRevision:original.revision,...extra});states.set(id,next)};
+ function message(text,error=false){byId('alerts').textContent=text;byId('alerts').className=error?'error':'success'}
+ function reset(){states=new Map();serial=0;message('Fictional crew records reset.');render()}
+ function seed(){try{if(states.has('worker-1'))throw Error('Worker example already exists; use reset.');const id='worker-1';states.set(id,model.start({...scope,workerId:id}));mutate(id,actor(id),'add-hazard',{hazardId:'h-ice',task:'Walk to loading point',description:'Slippery access to water fill point',severity:4,likelihood:3,at:'2026-11-15T11:00:00Z'});mutate(id,actor(id),'set-controls',{hazardId:'h-ice',controls:['Use approved walking route and traction aids'],residualSeverity:2,residualLikelihood:2,at:'2026-11-15T11:01:00Z'});mutate(id,actor(id),'worker-review',{reviewedConditions:true});message('Worker submitted revision 2 for explicit foreman review.');render()}catch(e){message(e.message,true)}}
+ function change(){try{const id='worker-1';mutate(id,actor(id),'add-hazard',{hazardId:'h-new-'+(++serial),task:'Move hose',description:'New hose pinch point on loading route',severity:3,likelihood:3,at:'2026-11-15T12:00:00Z'});message('Changed hazard invalidated the previous sign-offs. Worker must review the revised controls.');render()}catch(e){message(e.message,true)}}
+ function card(entry){
+  const wrap=node('div');wrap.className='card';const title=node('h3',names[entry.workerId]||entry.workerId);wrap.append(title);
+  const line=node('p');line.append(node('span','Status: '));const tag=node('span',entry.status);tag.className='pill'+(entry.status==='foreman-approved'&&!entry.needsAttention?' approved':'');line.append(tag);wrap.append(line);
+  if(entry.status==='missing'){wrap.append(node('p','No FLHA received for this period. Foreman cannot approve a missing assessment.'));return wrap}
+  wrap.append(node('p','Material revision '+entry.materialRevision+' · Hazards '+entry.hazardCount+' · Outstanding '+entry.unresolvedHazards));
+  if(entry.status==='review-pending'){
+   wrap.append(node('p','Submitted worker revision requires independent foreman control review.'));
+   const controlsLabel=node('label','Foreman confirmation for exact revision '+entry.materialRevision);const checkbox=node('input');checkbox.type='checkbox';checkbox.style.width='auto';checkbox.style.minHeight='auto';controlsLabel.prepend(checkbox);wrap.append(controlsLabel);
+   const reasons=node('input');reasons.type='text';reasons.placeholder='Reason for returning (5+ characters)';reasons.maxLength=500;const reasonLabel=node('label','Return reason');reasonLabel.append(reasons);wrap.append(reasonLabel);
+   const controls=node('div');controls.className='actions';
+   const approve=node('button','Record foreman review');approve.className='primary';approve.disabled=true;checkbox.addEventListener('change',()=>approve.disabled=!checkbox.checked);
+   approve.addEventListener('click',()=>{try{const current=states.get(entry.workerId);if(current.materialRevision!==entry.materialRevision||current.status!=='review-pending')throw Error('Review is stale; reload and re-review');mutate(entry.workerId,foreman,'foreman-approve',{reviewedControls:checkbox.checked});message('Foreman review recorded for material revision '+entry.materialRevision+'. No work authorization issued.');render()}catch(e){message(e.message,true)}});
+   const returnButton=node('button','Return for correction');returnButton.addEventListener('click',()=>{try{const current=states.get(entry.workerId);if(current.materialRevision!==entry.materialRevision||current.status!=='review-pending')throw Error('Assessment changed; refresh before return');mutate(entry.workerId,foreman,'return-for-correction',{reason:reasons.value.trim()});message('Assessment returned with documented reason.');render()}catch(e){message(e.message,true)}});
+   controls.append(approve,returnButton);wrap.append(controls);
+  }else if(entry.status==='foreman-approved')wrap.append(node('p','This revision has recorded reviews. Changes require new worker and foreman review. This is not a work permit.'));
+  else wrap.append(node('p','Worker correction or acknowledgement is pending; foreman approval is unavailable.'));
+  return wrap;
+ }
+ function render(){try{
+  const result=reporter.build([...states.values()],scope,foreman);byId('scope').textContent=scope.companyId+' / '+scope.projectId+' / '+scope.date;
+  byId('counts').textContent='Missing: '+result.counts.missing+' · Submitted: '+result.counts['review-pending']+' · Returned: '+result.counts.returned+' · Reviewed: '+result.counts['foreman-approved'];
+  const filter=byId('filter').value;byId('crew').replaceChildren();let visible=0;
+  result.entries.forEach(e=>{if(filter==='attention'&&!e.needsAttention||filter!=='all'&&filter!=='attention'&&e.status!==filter)return;byId('crew').append(card(e));visible++});
+  if(!visible)byId('crew').append(node('p','No matching crew assessments.'));
+  byId('hint').textContent='Report: '+result.status+' · Work authorized: NO · Human review required: YES';
+ }catch(e){byId('crew').replaceChildren(node('p','Cannot show unsafe or unauthorized report.'));message(e.message,true)}}
+ if(!model||!reporter){message('Safety modules unavailable; review actions disabled.',true);return}
+ byId('seed').addEventListener('click',seed);byId('change').addEventListener('click',change);byId('reset').addEventListener('click',reset);byId('filter').addEventListener('change',render);reset();
+})();
+</script></body></html>
