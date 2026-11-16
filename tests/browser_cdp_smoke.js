@@ -9,7 +9,7 @@ const {mkdtempSync,rmSync}=require('node:fs');
 const os=require('node:os');
 const root=path.resolve(__dirname,'..');
 const repository=require('../source/daily-report-repository'),localApi=require('../source/daily-report-local-api'),sessionsModule=require('../source/daily-report-session-store'),membershipsModule=require('../source/daily-report-durable-memberships'),coordinatedStorage=require('../source/daily-report-storage');
-const allowed=new Set(['pilot/workforce-onboarding.html','source/safety-document-model.js','source/onboarding-workflow.js','source/safety-revision-lifecycle.js','source/onboarding-completion-records.js','source/safety-audit-trail.js','source/safety-audit-consistency.js','pilot/daily-operations.html','source/daily-operations-report.js','source/daily-operations-pilot.js','source/daily-report-lifecycle.js','pilot/persistent-daily-operations.html']);
+const allowed=new Set(['pilot/workforce-onboarding.html','source/safety-document-model.js','source/onboarding-workflow.js','source/safety-revision-lifecycle.js','source/onboarding-completion-records.js','source/safety-audit-trail.js','source/safety-audit-consistency.js','pilot/daily-operations.html','source/daily-operations-report.js','source/daily-operations-pilot.js','source/daily-report-lifecycle.js','source/daily-report-automation.js','pilot/persistent-daily-operations.html']);
 const delay=ms=>new Promise(r=>setTimeout(r,ms));
 async function run(){
  const dbdir=mkdtempSync(path.join(os.tmpdir(),'aa-browser-db-'));
