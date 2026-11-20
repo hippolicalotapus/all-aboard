@@ -1,5 +1,6 @@
 [build]
-  publish = "."
+  command = "python3 tools/build_test_release.py && cp \"$(ls dist/*.html | head -1)\" dist/index.html"
+  publish = "dist"
 
 [[headers]]
   for = "/*"
