@@ -1,0 +1,32 @@
+name: Verify All Aboard
+
+# Manual trigger until exact source integrity and browser test baseline are verified.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Require application and offline tests
+        run: |
+          test -s source/all-aboard-personal.html
+          test -s tests/run_all.py
+          test -s tests/check_v33.py
+          test -s tests/runtime_checks.js
+      - name: Check for accidentally committed private keys
+        shell: bash
+        run: |
+          if git ls-files | grep -E '(^|/)(\.env$|[^/]+\.(pem|key|jks|keystore|p12)$)'; then
+            echo "Potential secrets committed"
+            exit 1
+          fi
+      - name: Run offline regression suite
+        run: python3 tests/run_all.py
+      - name: Validate inline JavaScript
+        run: python3 tests/check_inline_js.py source/all-aboard-personal.html

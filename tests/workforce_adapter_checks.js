@@ -1,0 +1,18 @@
+'use strict';
+const assert=require('node:assert/strict');
+const adapter=require('../source/workforce-adapter.js');
+let n=0;const check=(label,fn)=>{fn();n++;console.log('PASS:',label)};
+const base={schema:adapter.SCHEMA,eventId:'fictional-event-1',type:'assignment.offered',origin:'all-aboard',subject:'fictional-worker-1',assignmentId:'fictional-assignment-1',occurredAt:'2026-11-12T00:00:00Z',payload:{title:'Fictional induction',requiredTrainingIds:['fictional-whmis']}};
+check('valid assignment',()=>assert.deepEqual(adapter.validate(base),base));
+check('requires consent',()=>assert.throws(()=>adapter.createDemoBridge().submit(base)));
+check('fictional identifiers only',()=>assert.throws(()=>adapter.createDemoBridge().submit({...base,subject:'real-worker'},true)));
+check('idempotent event',()=>{const b=adapter.createDemoBridge();assert(b.submit(base,true).accepted);assert.deepEqual(b.submit(base,true),{accepted:false,reason:'duplicate'})});
+check('rejects cognitive telemetry',()=>assert.throws(()=>adapter.validate({...base,payload:{...base.payload,attentionScore:0.8}})));
+check('rejects MindPilot employer origin',()=>assert.throws(()=>adapter.validate({...base,origin:'mindpilot'})));
+check('rejects wrong origin',()=>assert.throws(()=>adapter.validate({...base,origin:'ai-focus'})));
+check('AI Exec progress claim',()=>assert.equal(adapter.validate({...base,type:'task.progress.submitted',origin:'ai-exec',payload:{taskId:'fictional-task',status:'completed-claim'}}).type,'task.progress.submitted'));
+check('AI Focus observation',()=>assert.equal(adapter.validate({...base,type:'safety.observation.submitted',origin:'ai-focus',payload:{observationId:'fictional-observation',summary:'Fictional hazard'}}).origin,'ai-focus'));
+check('rejects private payload fields',()=>assert.throws(()=>adapter.validate({...base,payload:{...base.payload,medical:'private'}})));
+check('rejects bad timestamp',()=>assert.throws(()=>adapter.validate({...base,occurredAt:'yesterday'})));
+check('inspection is immutable copy',()=>{const b=adapter.createDemoBridge();b.submit(base,true);b.inspect()[0].payload.title='changed';assert.equal(b.inspect()[0].payload.title,'Fictional induction')});
+console.log(n+' adapter checks passed');

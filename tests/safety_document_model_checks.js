@@ -1,0 +1,16 @@
+'use strict';
+const assert=require('node:assert/strict');
+const m=require('../source/safety-document-model');
+const doc={id:'swp-1',companyId:'company-A',title:'Excavation',revision:'3',type:'SWP',status:'approved',roles:['employee','foreman'],approvedBy:'safety-1'};
+const worker={id:'employee-1',companyId:'company-A',role:'employee'};
+assert.equal(m.assignments([doc],worker).length,1);
+assert.equal(m.assignments([doc],{...worker,companyId:'company-B'}).length,0);
+assert.equal(m.assignments([{...doc,status:'draft',approvedBy:null}],worker).length,0);
+assert.equal(m.assignments([doc],{...worker,role:'superintendent'}).length,0);
+assert.throws(()=>m.validateDocument({...doc,status:'approved',approvedBy:null}),/approver/);
+assert.throws(()=>m.acknowledge(doc,worker,{reviewed:false,acknowledgedAt:'2026-11-13T12:00:00Z'}),/reviewed/);
+assert.throws(()=>m.acknowledge(doc,{...worker,companyId:'company-B'},{reviewed:true,acknowledgedAt:'2026-11-13T12:00:00Z'}),/not assigned/);
+const a=m.acknowledge(doc,worker,{reviewed:true,acknowledgedAt:'2026-11-13T12:00:00Z'});
+assert.deepEqual([a.documentId,a.revision,a.employeeId],['swp-1','3','employee-1']);
+assert(Object.isFrozen(a));
+console.log('PASS: safety document assignment, draft gating, tenant isolation, revision-bound acknowledgement');

@@ -1,20 +1,34 @@
-# All Aboard
+# Employee onboarding and certificate management — replacement brand pending
 
-Mobile-first employee onboarding and certification management platform.
+Former working name: All Aboard. That name overlaps existing onboarding products and is being retired. **Onboard to Work** is the leading screened candidate, not a legally cleared or adopted brand.
 
-## Development status
+## Current development milestone: V39
 
-Private development repository. The latest verified application source and automated tests will be imported from the All Aboard V35 development checkpoint before further implementation.
+The fictional-data certificate-wallet prototype and tests are imported on `development`. V37 saves onboarding, reboarding, role-transfer and offboarding checklist progress separately from certificate records. It adds checklist backup export, validated restore previews and confirmed resets. Tasks show owners and remaining steps. Acknowledgements are simulated, not authenticated approvals. Checklist backups and certificate backups are separate.
+
+Open `source/all-aboard-personal.html` for the self-contained prototype. The legacy filename preserves development continuity. Do not enter real employee records or certificates.
+
+V38 adds a clear launcher for the personal wallet, company checklist demonstration and test tools. Run `python3 tools/build_test_release.py` to produce `dist/Employee_Onboarding_Test_v39.html`, a single file that requires no installation or server. It remains a fictional-data test, not a production employer service.
+
+V39 adds saved task deadlines, overdue/due-today filters and an attention queue across saved checklists. Date changes retain acknowledgements and status changes retain deadlines. Old checklist backups still load; new optional deadlines require V39 or later to preserve when restoring and saving. See [V39 evidence](docs/V39_TASK_DEADLINES.md).
+
+## Validation
+
+Run `python3 tests/run_all.py` and `python3 tests/check_inline_js.py source/all-aboard-personal.html`.
+
+Current local result: 69 offline checks/scenarios passed: 10 regression assertions, 9 wallet runtime, 10 workflow, 14 persistence, 15 full-script DOM integration and 11 deadline scenarios. Embedded model/store consistency, inline JavaScript syntax and self-contained build checks passed. DOM integration does not verify browser layout or native phone behavior. Browser integration remains blocked at Chromium launch by environment socket restrictions; Android device testing remains unverified.
+
+Optional browser integration command: `node tests/browser_workflow_checks.js`. It requires Playwright and a runnable Chromium installation. The offline runner does not count this test as passing. See [V37 implementation evidence](docs/V37_CHECKLIST_RECOVERY.md).
+
+## Product and name decisions
+
+See [name screening and feature parity register](docs/NAME_AND_FEATURE_REVIEW_2026-11-11.md) for researched competitors, advertised capabilities, implementation status, remaining name checks and prioritized development milestones. No candidate domain or email account has been created.
 
 ## Working rules
 
-- Commit and push tested development milestones to a dedicated development branch.
-- Keep the main branch stable; do not deploy automatically.
-- Never commit real employee credentials, certificate records, passwords, secrets, or personal data.
-- Preserve compatibility with existing wallet data and backups.
-- Run automated checks and record any unverified Android or browser behavior.
-- No paid services or deployments without explicit approval.
-
-## Next step
-
-Import the V35 source, tests, and handoff documentation after verifying the checkpoint contents. Do not treat this initial README as an application release.
+- Commit tested milestones to `development`; keep `main` stable.
+- No deployment, paid service or release without explicit approval.
+- Never commit employee data, credentials, certificate records, secrets or private backups.
+- Preserve existing storage keys, backup format and recovery behavior.
+- Record blocked or unexecuted checks honestly.
+- Existing historical V35 documents describe the earlier checkpoint; this README and the current review record reflect the latest status.
