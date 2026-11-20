@@ -1,0 +1,21 @@
+name: All Aboard source checkpoint guard
+on:
+  push:
+    branches: [main, 'dev/**']
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  integrity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify existing checkpoint is not misrepresented as a release
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          readme = Path('README.md').read_text()
+          assert 'V35' in readme, 'Preserve the V35 recovery requirement'
+          assert 'not treat this initial README as an application release' in readme
+          print('Checkpoint guard passed; application tests require recovered V35 source')
+          PY
